@@ -63,9 +63,7 @@ namespace IRCbot
             {
                 MySqlDataReader Reader2 = DbWorker.ExecuteReader(@"SELECT NewValue FROM AppsHistory WHERE AppID = @AppID AND Action = 'created_info' AND `Key` = 1 LIMIT 1", new MySqlParameter[]
                 {
-                    new MySqlParameter("AppID", appid),
-                    new MySqlParameter("Action", "created_info"),
-                    new MySqlParameter("Key", 1)
+                    new MySqlParameter("AppID", appid)
                 });
 
                 if (Reader2.Read())

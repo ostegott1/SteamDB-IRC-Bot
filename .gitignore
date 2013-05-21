@@ -13,10 +13,13 @@ TestResults
 *.user
 *.sln.docstates
 *.config
+*.csproj
+*.dll
 
 # Build results
 [Dd]ebug/
 [Rr]elease/
+Properties/
 x64/
 *_i.c
 *_p.c

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <appSettings>
+    <add key="debug" value="0"/>
+    <add key="irc-server" value="irc.network.net"/>
+    <add key="irc-port" value="6667"/>
+    <add key="announce_channel" value="#main-channel"/>
+    <add key="steam-username" value="username"/>
+    <add key="steam-password" value="password"/>
+    <add key="mysql-cstring" value="server=127.0.0.1;port=3306;userid=root;password=root;database=steamcdr;charset=utf8"/>
+  </appSettings>
+</configuration>

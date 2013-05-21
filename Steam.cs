@@ -18,12 +18,13 @@ namespace IRCbot
         public static SteamApps steamApps = steamClient.GetHandler<SteamApps>();
         public static SteamFriends steamFriends = steamClient.GetHandler<SteamFriends>();
         public static SteamUserStats stats = steamClient.GetHandler<SteamUserStats>();
+        public static IrcClient irc = IRCbot.Program.irc;
 
         private static string GetDBString(string SqlFieldName, MySqlDataReader Reader)
         {
             return Reader[SqlFieldName].Equals(DBNull.Value) ? String.Empty : Reader.GetString(SqlFieldName);
         }
-        public static IrcClient irc = IRCbot.Program.irc;
+
         public static string getPackageName(string subid)
         {
             String name = "";
@@ -44,49 +45,38 @@ namespace IRCbot
         public static string getAppName(string appid)
         {
             String name = "";
-            MySqlDataReader Reader3 = DbWorker.ExecuteReader(@"SELECT StoreName FROM Apps WHERE AppID = @AppID", new MySqlParameter[]
+
+            MySqlDataReader Reader = DbWorker.ExecuteReader(@"SELECT IF(StoreName = "", Name, StoreName) as Name FROM Apps WHERE AppID = @AppID", new MySqlParameter[]
             {
                 new MySqlParameter("AppID", appid)
             });
-            while (Reader3.Read())
-            {
-                name = GetDBString("StoreName", Reader3);
-            }
-            Reader3.Close();
-            Reader3.Dispose();
 
-            if (name.Equals(""))
+            if (Reader.Read())
             {
-
-                MySqlDataReader Reader = DbWorker.ExecuteReader(@"SELECT Name FROM Apps WHERE AppID = @AppID", new MySqlParameter[]
-            {
-                new MySqlParameter("AppID", appid)
-            });
-                while (Reader.Read())
-                {
-                    name = GetDBString("Name", Reader);
-                }
-                Reader.Close();
-                Reader.Dispose();
-
+                name = GetDBString("Name", Reader);
             }
 
-            if (name.Equals("") || name.Contains("ValveTestApp"))
+            Reader.Close();
+            Reader.Dispose();
+
+            if (name.Equals("") || name.StartsWith("ValveTestApp"))
             {
-                MySqlDataReader Reader2 = DbWorker.ExecuteReader(@"SELECT NewValue FROM AppsHistory WHERE AppID = @AppID AND Action = @Action AND `Key` = @Key", new MySqlParameter[]
+                MySqlDataReader Reader2 = DbWorker.ExecuteReader(@"SELECT NewValue FROM AppsHistory WHERE AppID = @AppID AND Action = 'created_info' AND `Key` = 1 LIMIT 1", new MySqlParameter[]
                 {
                     new MySqlParameter("AppID", appid),
                     new MySqlParameter("Action", "created_info"),
                     new MySqlParameter("Key", 1)
                 });
-                while (Reader2.Read())
+
+                if (Reader2.Read())
                 {
                     name = GetDBString("NewValue", Reader2);
                 }
+
                 Reader2.Close();
                 Reader2.Dispose();
             }
-            
+
             return name;
         }
 
@@ -94,6 +84,7 @@ namespace IRCbot
         {
             stats.GetNumberOfCurrentPlayers(appid);
         }
+
         public static void DumpApp(uint appid)
         {
             steamApps.PICSGetProductInfo(appid, null, false, false);

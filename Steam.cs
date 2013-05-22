@@ -252,36 +252,35 @@ namespace IRCbot
                 });
                 msg.Handle<SteamClient.JobCallback<SteamApps.PICSProductInfoCallback>>(callback =>
                 {
-                    //irc.SendMessage(SendType.Message, "#steamdb-announce", "Got callback.");
                     foreach (var unknownapp in callback.Callback.UnknownApps)
                     {
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Unknown app: " + unknownapp.ToString());
+                        irc.SendMessage(SendType.Message, channel, "Unknown app: " + unknownapp.ToString());
                     }
                     foreach (var unknownsub in callback.Callback.UnknownPackages)
                     {
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Unknown sub: " + unknownsub.ToString());
+                        irc.SendMessage(SendType.Message, channel, "Unknown sub: " + unknownsub.ToString());
                     }
                     foreach (var callbackapp in callback.Callback.Apps)
                     {
                         callbackapp.Value.KeyValues.SaveToFile("app/" + callbackapp.Key.ToString() + ".vdf", false);
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "http://raw.steamdb.info/app/" + callbackapp.Key.ToString() + ".vdf");
+                        irc.SendMessage(SendType.Message, channel, "http://raw.steamdb.info/app/" + callbackapp.Key.ToString() + ".vdf");
                     }
                     foreach (var callbacksub in callback.Callback.Packages)
                     {
                         var kv = callback.Callback.Packages[uint.Parse(callbacksub.Key.ToString())].KeyValues.Children.FirstOrDefault();
                         kv.SaveToFile("sub/" + callbacksub.Key.ToString() + ".vdf", false);
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "http://raw.steamdb.info/sub/" + callbacksub.Key.ToString() + ".vdf");
+                        irc.SendMessage(SendType.Message, channel, "http://raw.steamdb.info/sub/" + callbacksub.Key.ToString() + ".vdf");
                     }
                 });
                 msg.Handle<SteamClient.JobCallback<SteamUserStats.NumberOfPlayersCallback>>(callback =>
                 {
                     if (callback.Callback.Result != EResult.OK)
                     {
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Something went wrong, bruvs.");
+                        irc.SendMessage(SendType.Message, channel, "Something went wrong, bruvs.");
                     }
                     else
                     {
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", callback.Callback.NumPlayers.ToString());
+                        irc.SendMessage(SendType.Message, channel, callback.Callback.NumPlayers.ToString());
                         Console.WriteLine(callback.JobID.ToString());
                     }
                     

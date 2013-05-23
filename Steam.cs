@@ -139,8 +139,8 @@ namespace IRCbot
                     {
                         irc.SendMessage(SendType.Message, channel, "Could not log in: " + callback.Result);
                         System.Threading.Thread.Sleep(1000);
-                        irc.SendMessage(SendType.Message, channel, "Connecting..");
-                        steamClient.Connect();
+                       // irc.SendMessage(SendType.Message, channel, "Connecting..");
+                        //steamClient.Connect();
                     }
                     else
                     {

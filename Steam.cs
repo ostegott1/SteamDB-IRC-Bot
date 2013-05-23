@@ -168,7 +168,6 @@ namespace IRCbot
                         steamFriends.SetPersonaName("Jan");
                         steamFriends.SetPersonaState(EPersonaState.Busy);
                         irc.SendMessage(SendType.Action, channel, "is now logged in.");
-                        steamApps.PICSGetChangesSince(PreviousChange, true, true);
                         steamApps.PICSGetChangesSince(0, true, true);
                     }
                 });

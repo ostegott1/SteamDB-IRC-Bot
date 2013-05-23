@@ -34,6 +34,7 @@ namespace IRCbot
         public static string DARK_GRAY = (char)3 + "14";
         public static string LIGHT_GRAY = (char)3 + "15";
     }
+
     class IRCHandler
     {
         public static IrcClient irc = IRCbot.Program.irc;

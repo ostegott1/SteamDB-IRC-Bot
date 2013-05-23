@@ -126,6 +126,7 @@ namespace IRCbot
             while (running)
             {
                 CallbackMsg msg = steamClient.WaitForCallback(true);
+
                 msg.Handle<SteamClient.ConnectedCallback>(callback =>
                 {
                     if (callback.Result != EResult.OK)
@@ -140,9 +141,9 @@ namespace IRCbot
                     });
                 });
 
-                msg.Handle <SteamClient.DisconnectedCallback>(callback =>
+                msg.Handle<SteamClient.DisconnectedCallback>(callback =>
                 {
-                    irc.SendMessage(SendType.Message, channel, "Disconnected! Reconnecting..");
+                    irc.SendMessage(SendType.Message, channel, "Disconnected! Reconnecting...");
                     Thread.Sleep(TimeSpan.FromSeconds(15));
                     steamClient.Connect();
                 });
@@ -150,7 +151,8 @@ namespace IRCbot
                 msg.Handle<SteamFriends.PersonaStateCallback>(callback =>
                 {
                     Console.WriteLine(callback.Name.ToString() + " + " + callback.State.ToString());
-                    if (callback.Name == "Jan")
+
+                    if (PreviousChange > 0 && callback.Name == "Jan")
                     {
                         if (updaterState == "None")
                         {
@@ -160,16 +162,18 @@ namespace IRCbot
                         {
                             if (callback.State == EPersonaState.Busy)
                             {
-                                irc.SendMessage(SendType.Message, "#steamdb", "Updater is now back online.");
+                                irc.SendMessage(SendType.Action, "#steamdb", "Updater is now back online :)");
                             }
                             else
                             {
-                                irc.SendMessage(SendType.Message, "#steamdb", "Hey xPaw and Alram, the updater (or Steam) died. :'(");
+                                irc.SendMessage(SendType.Action, "#steamdb", "Updater (or Steam) just died :'( cc Alram and xPaw");
                             }
+
                             updaterState = callback.State.ToString();
                         }
                     }
                 });
+
                 msg.Handle<CustomCallbacks.announcementCallback>(callback =>
                 {
                     foreach (var announcement in callback.Result.Body.announcements)
@@ -199,33 +203,35 @@ namespace IRCbot
                 {
                     if (PreviousChange != callback.Callback.CurrentChangeNumber)
                     {
+                        PreviousChange = callback.Callback.CurrentChangeNumber;
+
                         List<uint> appslist = new List<uint>();
                         List<uint> packageslist = new List<uint>();
                         string appsmsg = "Apps: ";
                         string subsmsg = "Packages: ";
 
-                        //irc.SendMessage(SendType.Message, channel, "Received changelist " + callback.Callback.CurrentChangeNumber + " with " + callback.Callback.AppChanges.Count + " apps and " + callback.Callback.PackageChanges.Count + " packages - http://steamdb.info/changelist.php?changeid=" + callback.Callback.CurrentChangeNumber);
-                        irc.SendMessage(SendType.Message, channel, "Received changelist" + '\x03' + "7 " + callback.Callback.CurrentChangeNumber + "\x0F with\x03" + (callback.Callback.AppChanges.Count > 10 ? "8" : "7") + " " + callback.Callback.AppChanges.Count + "\x0F apps and\x03" + (callback.Callback.PackageChanges.Count > 10 ? "8" : "7") + " " + callback.Callback.PackageChanges.Count + "\x0F packages -" + '\x03' + "2 http://steamdb.info/changelist.php?changeid=" + callback.Callback.CurrentChangeNumber + '\x0F');
+                        irc.SendMessage(SendType.Message, channel, "Received changelist " + Colors.OLIVE + PreviousChange + Colors.NORMAL + " with " + (callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.AppChanges.Count + Colors.NORMAL + " apps and " + (callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + " " + callback.Callback.PackageChanges.Count + Colors.NORMAL + " packages - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + PreviousChange + Colors.NORMAL);
 
                         foreach (var callbackapp in callback.Callback.AppChanges)
                         {
+                        	String appname = getAppName(callbackapp.Key.ToString());
+
                             if (importantapps.Contains(callbackapp.Key.ToString()))
                             {
-                                irc.SendMessage(SendType.Message, "#steamdb", "Important app update:" + '\x03' + "7 " + getAppName(callbackapp.Key.ToString()) + "\x0F -" + '\x03' + "2 http://steamdb.info/app/" + callbackapp.Key.ToString() + "/#section_history\x0F");
+                                irc.SendMessage(SendType.Message, "#steamdb", "Important app update: " + Colors.OLIVE + appname + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamdb.info/app/" + callbackapp.Key.ToString() + "/#section_history" + Colors.NORMAL);
                             }
 
                             appslist.Add(callbackapp.Key);
-                            String appname = getAppName(callbackapp.Key.ToString());
 
-                            if (!callback.Callback.CurrentChangeNumber.Equals(callbackapp.Value.ChangeNumber))
+                            if (!PreviousChange.Equals(callbackapp.Value.ChangeNumber))
                             {
                                 if (!appname.Equals(""))
                                 {
-                                    irc.SendMessage(SendType.Message, channel, "App: " + callbackapp.Key.ToString() + " (" + appname + ")" + " - bundled changelist" + '\x03' + "7 " + callbackapp.Value.ChangeNumber + "\x0F -" + '\x03' + "2 http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + '\x0F'); 
+                                    irc.SendMessage(SendType.Message, channel, "App: " + callbackapp.Key.ToString() + Colors.TEAL + " (" + appname + ")" + Colors.NORMAL + " - bundled changelist " + Colors.OLIVE + callbackapp.Value.ChangeNumber + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + Colors.NORMAL); 
                                 }
                                 else
                                 {
-                                    irc.SendMessage(SendType.Message, channel, "App: " + callbackapp.Key.ToString() + " - bundled changelist" + '\x03' + "7 " + callbackapp.Value.ChangeNumber + "\x0F -" + '\x03' + "2 http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + '\x0F'); 
+                                    irc.SendMessage(SendType.Message, channel, "App: " + callbackapp.Key.ToString() + " - bundled changelist " + Colors.OLIVE + callbackapp.Value.ChangeNumber + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + Colors.NORMAL); 
                                 }
                             }
                             else
@@ -234,7 +240,7 @@ namespace IRCbot
 
                                 if (!appname.Equals(""))
                                 {
-                                    appsmsg += "(" + appname + ") ";
+                                    appsmsg += Colors.TEAL + "(" + appname + ")" + Colors.NORMAL + " ";
                                 }
                             }
                         }
@@ -242,18 +248,25 @@ namespace IRCbot
                         foreach (var callbackpack in callback.Callback.PackageChanges)
                         {
                             Console.WriteLine("KEY: " + callbackpack.Key + " VALUE: " + callbackpack.Value);
-                            packageslist.Add(callbackpack.Key);
+
                             String subname = getPackageName(callbackpack.Key.ToString());
 
-                            if (!callback.Callback.CurrentChangeNumber.Equals(callbackpack.Value.ChangeNumber))
+                            if( callbackpack.Key == 0 )
+                            {
+                                irc.SendMessage(SendType.Message, "#steamdb", "Important package update: " + Colors.OLIVE + subname + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamdb.info/sub/" + callbackapp.Key.ToString() + "/#section_history" + Colors.NORMAL);
+                            }
+
+                            packageslist.Add(callbackpack.Key);
+
+                            if (!PreviousChange.Equals(callbackpack.Value.ChangeNumber))
                             {
                                 if (!subname.Equals(""))
                                 {
-                                    irc.SendMessage(SendType.Message, channel, "Package: " + callbackpack.Key.ToString() + " (" + subname + ")" + " - bundled changelist" + '\x03' + "7 " + callbackpack.Value.ChangeNumber + "\x0F -" + '\x03' + "2 http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + '\x0F');
+                                    irc.SendMessage(SendType.Message, channel, "Package: " + callbackpack.Key.ToString() + Colors.TEAL + " (" + subname + ")" + Colors.NORMAL + " - bundled changelist " + Colors.OLIVE + callbackpack.Value.ChangeNumber + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + Colors.NORMAL);
                                 }
                                 else
                                 {
-                                    irc.SendMessage(SendType.Message, channel, "Package: " + callbackpack.Key.ToString() + " - bundled changelist" + '\x03' + "7 " + callbackpack.Value.ChangeNumber + "\x0F -" + '\x03' + "2 http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + '\x0F');
+                                    irc.SendMessage(SendType.Message, channel, "Package: " + callbackpack.Key.ToString() + " - bundled changelist " + Colors.OLIVE + callbackpack.Value.ChangeNumber + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + Colors.NORMAL);
                                 }
                             }
                             else
@@ -262,7 +275,7 @@ namespace IRCbot
 
                                 if (!subname.Equals(""))
                                 {
-                                    subsmsg += "(" + subname + ") ";
+                                    subsmsg += Colors.TEAL + "(" + subname + ")" + Colors.NORMAL + " ";
                                 }
                             }
                         }
@@ -276,8 +289,8 @@ namespace IRCbot
                         {
                             irc.SendMessage(SendType.Message, channel, subsmsg);
                         }
-                        PreviousChange = callback.Callback.CurrentChangeNumber;
                     }
+
                     steamApps.PICSGetChangesSince(PreviousChange, true, true);
                 });
 

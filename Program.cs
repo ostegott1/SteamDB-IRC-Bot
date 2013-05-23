@@ -22,9 +22,12 @@ namespace IRCbot
             string channel = ConfigurationManager.AppSettings["announce_channel"];
             int port = int.Parse(ConfigurationManager.AppSettings["irc-port"]);
             int debug = int.Parse(ConfigurationManager.AppSettings["debug"]);
-            irc.OnDisconnected += new EventHandler(IRCHandler.OnDisconnected);
-            irc.OnKick += new KickEventHandler(IRCHandler.OnKick);
             irc.OnChannelMessage += new IrcEventHandler(IRCHandler.OnChannelMessage);
+            irc.AutoRejoin = true;
+            irc.AutoRelogin = true;
+            irc.AutoReconnect = true;
+            irc.AutoRetry = true;
+            irc.AutoRejoinOnKick = true;
 
             try {
                 irc.Connect(serverlist, port);

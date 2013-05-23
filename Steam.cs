@@ -210,7 +210,7 @@ namespace IRCbot
                         string appsmsg = "Apps: ";
                         string subsmsg = "Packages: ";
 
-                        irc.SendMessage(SendType.Message, channel, "Received changelist " + Colors.OLIVE + PreviousChange + Colors.NORMAL + " with " + (callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.AppChanges.Count + Colors.NORMAL + " apps and " + (callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + " " + callback.Callback.PackageChanges.Count + Colors.NORMAL + " packages - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + PreviousChange + Colors.NORMAL);
+                        irc.SendMessage(SendType.Message, channel, "Received changelist " + Colors.OLIVE + PreviousChange + Colors.NORMAL + " with " + (callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.AppChanges.Count + Colors.NORMAL + " apps and" + (callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + " " + callback.Callback.PackageChanges.Count + Colors.NORMAL + " packages - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + PreviousChange + Colors.NORMAL);
 
                         foreach (var callbackapp in callback.Callback.AppChanges)
                         {
@@ -253,7 +253,7 @@ namespace IRCbot
 
                             if( callbackpack.Key == 0 )
                             {
-                                irc.SendMessage(SendType.Message, "#steamdb", "Important package update: " + Colors.OLIVE + subname + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamdb.info/sub/" + callbackapp.Key.ToString() + "/#section_history" + Colors.NORMAL);
+                                irc.SendMessage(SendType.Message, "#steamdb", "Important package update: " + Colors.OLIVE + subname + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamdb.info/sub/" + callbackpack.Key.ToString() + "/#section_history" + Colors.NORMAL);
                             }
 
                             packageslist.Add(callbackpack.Key);

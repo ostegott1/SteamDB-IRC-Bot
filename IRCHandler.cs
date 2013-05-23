@@ -15,9 +15,9 @@ namespace IRCbot
     {
         public static IrcClient irc = IRCbot.Program.irc;
 
-        public static void OnKick(object sender, IrcEventArgs e)
+        public static void OnKick(object sender, KickEventArgs e)
         {
-            irc.RfcJoin(e.Data.Channel);
+            irc.RfcJoin(e.Channel);
         }
 
         public static void OnDisconnected(object sender, EventArgs e)

@@ -110,25 +110,9 @@ namespace IRCbot
             Reader.Dispose();
         }
 
-        public static uint GetLastChangeNumber()
-        {
-        	uint PreviousChange = 0;
-            MySqlDataReader Reader = DbWorker.ExecuteReader(@"SELECT ChangeID FROM Changelists ORDER BY ChangeID DESC LIMIT 1");
-
-            if (Reader.Read())
-            {
-                PreviousChange = Reader.GetInt32("ChangeID");
-            }
-
-            Reader.Close();
-            Reader.Dispose();
-
-            return PreviousChange;
-        }
-
         public static void Loop()
         {
-            uint PreviousChange = GetLastChangeNumber();
+            uint PreviousChange = 0;
             string channel = ConfigurationManager.AppSettings["announce_channel"];
 
             LoadImportantApps();
@@ -162,18 +146,15 @@ namespace IRCbot
                     Thread.Sleep(TimeSpan.FromSeconds(15));
                     steamClient.Connect();
                 });
-<<<<<<< HEAD
-=======
+
                 msg.Handle<CustomCallbacks.MyCallback>(callback =>
                 {
                     foreach (var announcement in callback.Result.Body.announcements)
                     {
                         Console.WriteLine(announcement.gid.ToString() + announcement.headline.ToString());
-                       // Console.WriteLine(steamId.ConvertToUInt64(callback.Result.Body.steamid_clan));
                         irc.SendMessage(SendType.Message, "#steamdb", "Group announcement: " + Colors.GREEN + announcement.headline.ToString() + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamcommunity.com/gid/" + callback.Result.Body.steamid_clan + "#announcements/detail/" + announcement.gid + Colors.NORMAL);
                     }
                 });
->>>>>>> Implemented announcements support & colors
 
                 msg.Handle<SteamUser.LoggedOnCallback>(callback =>
                 {
@@ -181,21 +162,14 @@ namespace IRCbot
                     {
                         irc.SendMessage(SendType.Message, channel, "Could not log in: " + callback.Result);
                         System.Threading.Thread.Sleep(1000);
-                        //irc.SendMessage(SendType.Message, channel, "Connecting..");
-                        //steamClient.Connect();
                     }
                     else
                     {
                         steamFriends.SetPersonaName("Jan");
                         steamFriends.SetPersonaState(EPersonaState.Busy);
-
                         irc.SendMessage(SendType.Action, channel, "is now logged in.");
-<<<<<<< HEAD
-
                         steamApps.PICSGetChangesSince(PreviousChange, true, true);
-=======
                         steamApps.PICSGetChangesSince(0, true, true);
->>>>>>> Implemented announcements support & colors
                     }
                 });
 
@@ -280,10 +254,8 @@ namespace IRCbot
                         {
                             irc.SendMessage(SendType.Message, channel, subsmsg);
                         }
-
                         PreviousChange = callback.Callback.CurrentChangeNumber;
                     }
-
                     steamApps.PICSGetChangesSince(PreviousChange, true, true);
                 });
 
@@ -321,7 +293,6 @@ namespace IRCbot
                         irc.SendMessage(SendType.Message, channel, callback.Callback.NumPlayers.ToString());
                         Console.WriteLine(callback.JobID.ToString());
                     }
-                    
                 });
             }
         }

@@ -23,6 +23,7 @@ namespace IRCbot
             int port = int.Parse(ConfigurationManager.AppSettings["irc-port"]);
             int debug = int.Parse(ConfigurationManager.AppSettings["debug"]);
             irc.OnDisconnected += new EventHandler(IRCHandler.OnDisconnected);
+            irc.OnKick += new KickEventHandler(IRCHandler.OnKick);
             irc.OnChannelMessage += new IrcEventHandler(IRCHandler.OnChannelMessage);
 
             try {

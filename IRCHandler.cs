@@ -11,9 +11,10 @@ using MySql.Data.MySqlClient;
 
 namespace IRCbot
 {
-    class ReadCommands
+    class IRCHandler
     {
         public static IrcClient irc = IRCbot.Program.irc;
+
         public static void OnChannelMessage(object sender, IrcEventArgs e)
         {
             switch (e.Data.MessageArray[0])

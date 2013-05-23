@@ -15,14 +15,14 @@ namespace IRCbot
         static void Main(string[] args)
         {
             irc.Encoding = System.Text.Encoding.UTF8;
-            irc.SendDelay = 200;
+            irc.SendDelay = 500;
             irc.AutoRetry = true;
             irc.ActiveChannelSyncing = true;
             string[] serverlist = {ConfigurationManager.AppSettings["irc-server"]};
             string channel = ConfigurationManager.AppSettings["announce_channel"];
             int port = int.Parse(ConfigurationManager.AppSettings["irc-port"]);
             int debug = int.Parse(ConfigurationManager.AppSettings["debug"]);
-            irc.OnChannelMessage += new IrcEventHandler(ReadCommands.OnChannelMessage);
+            irc.OnChannelMessage += new IrcEventHandler(IRCHandler.OnChannelMessage);
 
             try {
                 irc.Connect(serverlist, port);

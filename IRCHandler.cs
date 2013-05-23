@@ -14,14 +14,17 @@ namespace IRCbot
     class IRCHandler
     {
         public static IrcClient irc = IRCbot.Program.irc;
+
         public static void OnChannelMessage(object sender, IrcEventArgs e)
         {
             switch (e.Data.MessageArray[0])
             {
                 case "!app":
+                {
                     if (!e.Data.MessageArray[1].ToString().Equals(""))
                     {
                         uint appid;
+
                         if (uint.TryParse(e.Data.MessageArray[1].ToString(), out appid))
                         {
                             Steam.DumpApp(appid);
@@ -31,11 +34,15 @@ namespace IRCbot
                             irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid AppID format!");
                         }
                     }
+
                     break;
+                }
                 case "!sub":
+                {
                     if (!e.Data.MessageArray[1].ToString().Equals(""))
                     {
                         uint subid;
+
                         if (uint.TryParse(e.Data.MessageArray[1].ToString(), out subid))
                         {
                             Steam.DumpSub(subid);
@@ -44,11 +51,14 @@ namespace IRCbot
                         {
                             irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid SubID format!");
                         }
-
                     }
+
                     break;
+                }
                 case "!numplayers":
+                {
                     uint targetapp;
+
                     if (uint.TryParse(e.Data.MessageArray[1].ToString(), out targetapp))
                     {
                         Steam.getNumPlayers(targetapp);
@@ -57,7 +67,16 @@ namespace IRCbot
                     {
                         irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid NumPlayers format!");
                     }
+
                     break;
+                }
+                case "!reload":
+                {
+                    // TODO: Check if user is op
+                    Steam.LoadImportantApps();
+
+                    break;
+                }
             }
         }
     }

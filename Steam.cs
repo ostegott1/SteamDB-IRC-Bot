@@ -19,6 +19,7 @@ namespace IRCbot
         public static SteamFriends steamFriends = steamClient.GetHandler<SteamFriends>();
         public static SteamUserStats stats = steamClient.GetHandler<SteamUserStats>();
         public static IrcClient irc = IRCbot.Program.irc;
+        public static List<string> importantapps = new List<string>();
 
         private static string GetDBString(string SqlFieldName, MySqlDataReader Reader)
         {
@@ -93,24 +94,30 @@ namespace IRCbot
             steamApps.PICSGetProductInfo(null, subid, false, false);
         }
 
-        public static void Loop()
+        public static void LoadImportantApps()
         {
-
-            uint PreviousChange = 0;
-            string channel = ConfigurationManager.AppSettings["announce_channel"];
-            string PrevChangeFile = @"lastchangenumber";
-
-            steamClient.Connect();
-
-            List<string> importantapps = new List<string>();
+            importantapps.Clear();
 
             MySqlDataReader Reader = DbWorker.ExecuteReader(@"SELECT AppID FROM ImportantApps WHERE `Announce` = 1");
+
             while (Reader.Read())
             {
                 importantapps.Add(GetDBString("AppID", Reader));
             }
+
             Reader.Close();
             Reader.Dispose();
+        }
+
+        public static void Loop()
+        {
+            uint PreviousChange = 0;
+            string channel = ConfigurationManager.AppSettings["announce_channel"];
+            string PrevChangeFile = @"lastchangenumber";
+
+            LoadImportantApps();
+
+            steamClient.Connect();
 
             bool running = true;
             while (running)

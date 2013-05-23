@@ -12,6 +12,7 @@ namespace IRCbot
     class Program
     {
         public static IrcClient irc = new IrcClient();
+
         static void Main(string[] args)
         {
             irc.Encoding = System.Text.Encoding.UTF8;

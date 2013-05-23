@@ -11,6 +11,7 @@ namespace IRCbot
     public static class DbWorker
     {
         private static string ConnectionString = ConfigurationManager.AppSettings["mysql-cstring"];
+
         public static MySqlDataReader ExecuteReader(string text)
         {
             return MySqlHelper.ExecuteReader(ConnectionString, text);

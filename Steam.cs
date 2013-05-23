@@ -109,24 +109,42 @@ namespace IRCbot
             Reader.Dispose();
         }
 
+        public static uint GetLastChangeNumber()
+        {
+        	uint PreviousChange = 0;
+            MySqlDataReader Reader = DbWorker.ExecuteReader(@"SELECT ChangeID FROM Changelists ORDER BY ChangeID DESC LIMIT 1");
+
+            if (Reader.Read())
+            {
+                PreviousChange = Reader.GetInt32("ChangeID");
+            }
+
+            Reader.Close();
+            Reader.Dispose();
+
+            return PreviousChange;
+        }
+
         public static void Loop()
         {
-            uint PreviousChange = 0;
+            uint PreviousChange = GetLastChangeNumber();
             string channel = ConfigurationManager.AppSettings["announce_channel"];
-            string PrevChangeFile = @"lastchangenumber";
 
             LoadImportantApps();
 
             steamClient.Connect();
 
             bool running = true;
+
             while (running)
             {
                 CallbackMsg msg = steamClient.WaitForCallback(true);
                 msg.Handle<SteamClient.ConnectedCallback>(callback =>
                 {
                     if (callback.Result != EResult.OK)
+                    {
                         throw new Exception("Could not connect: " + callback.Result);
+                    }
 
                     steamUser.LogOn(new SteamUser.LogOnDetails
                     {
@@ -134,65 +152,56 @@ namespace IRCbot
                         Password = ConfigurationManager.AppSettings["steam-password"]
                     });
                 });
+
                 msg.Handle <SteamClient.DisconnectedCallback>(callback =>
                 {
                     irc.SendMessage(SendType.Message, channel, "Disconnected! Reconnecting..");
                     Thread.Sleep(TimeSpan.FromSeconds(15));
                     steamClient.Connect();
                 });
+
                 msg.Handle<SteamUser.LoggedOnCallback>(callback =>
                 {
                     if (callback.Result != EResult.OK)
                     {
                         irc.SendMessage(SendType.Message, channel, "Could not log in: " + callback.Result);
                         System.Threading.Thread.Sleep(1000);
-                       // irc.SendMessage(SendType.Message, channel, "Connecting..");
+                        //irc.SendMessage(SendType.Message, channel, "Connecting..");
                         //steamClient.Connect();
                     }
                     else
                     {
                         steamFriends.SetPersonaName("Jan");
                         steamFriends.SetPersonaState(EPersonaState.Busy);
+
                         irc.SendMessage(SendType.Action, channel, "is now logged in.");
-                        if (File.Exists(PrevChangeFile) && PreviousChange == 0)
-                        {
-                            steamApps.PICSGetChangesSince(uint.Parse(File.ReadAllText(PrevChangeFile).ToString()), true, true);
-                        }
-                        else
-                        {
-                            steamApps.PICSGetChangesSince(0, true, true);
-                        }
+
+                        steamApps.PICSGetChangesSince(PreviousChange, true, true);
                     }
                 });
 
                 msg.Handle<SteamClient.JobCallback<SteamApps.PICSChangesCallback>>(callback =>
                 {
-                    if (File.Exists(PrevChangeFile))
-                    {
-                        PreviousChange = uint.Parse(File.ReadAllText(PrevChangeFile).ToString());
-                    }
-                    else
-                    {
-                        File.WriteAllText(PrevChangeFile, callback.Callback.CurrentChangeNumber.ToString());
-                    }
                     if (PreviousChange != callback.Callback.CurrentChangeNumber)
                     {
-
                         List<uint> appslist = new List<uint>();
                         List<uint> packageslist = new List<uint>();
                         string appsmsg = "Apps: ";
                         string subsmsg = "Packages: ";
 
-                       // irc.SendMessage(SendType.Message, channel, "Received changelist " + callback.Callback.CurrentChangeNumber + " with " + callback.Callback.AppChanges.Count + " apps and " + callback.Callback.PackageChanges.Count + " packages - http://steamdb.info/changelist.php?changeid=" + callback.Callback.CurrentChangeNumber);
+                        //irc.SendMessage(SendType.Message, channel, "Received changelist " + callback.Callback.CurrentChangeNumber + " with " + callback.Callback.AppChanges.Count + " apps and " + callback.Callback.PackageChanges.Count + " packages - http://steamdb.info/changelist.php?changeid=" + callback.Callback.CurrentChangeNumber);
                         irc.SendMessage(SendType.Message, channel, "Received changelist" + '\x03' + "7 " + callback.Callback.CurrentChangeNumber + "\x0F with\x03" + (callback.Callback.AppChanges.Count > 10 ? "8" : "7") + " " + callback.Callback.AppChanges.Count + "\x0F apps and\x03" + (callback.Callback.PackageChanges.Count > 10 ? "8" : "7") + " " + callback.Callback.PackageChanges.Count + "\x0F packages -" + '\x03' + "2 http://steamdb.info/changelist.php?changeid=" + callback.Callback.CurrentChangeNumber + '\x0F');
+
                         foreach (var callbackapp in callback.Callback.AppChanges)
                         {
                             if (importantapps.Contains(callbackapp.Key.ToString()))
                             {
-                                   irc.SendMessage(SendType.Message, "#steamdb", "Important app update:" + '\x03' + "7 " + getAppName(callbackapp.Key.ToString()) + "\x0F -" + '\x03' + "2 http://steamdb.info/app/" + callbackapp.Key.ToString() + "/#section_history\x0F");
+                                irc.SendMessage(SendType.Message, "#steamdb", "Important app update:" + '\x03' + "7 " + getAppName(callbackapp.Key.ToString()) + "\x0F -" + '\x03' + "2 http://steamdb.info/app/" + callbackapp.Key.ToString() + "/#section_history\x0F");
                             }
+
                             appslist.Add(callbackapp.Key);
                             String appname = getAppName(callbackapp.Key.ToString());
+
                             if (!callback.Callback.CurrentChangeNumber.Equals(callbackapp.Value.ChangeNumber))
                             {
                                 if (!appname.Equals(""))
@@ -203,10 +212,11 @@ namespace IRCbot
                                 {
                                     irc.SendMessage(SendType.Message, channel, "App: " + callbackapp.Key.ToString() + " - bundled changelist" + '\x03' + "7 " + callbackapp.Value.ChangeNumber + "\x0F -" + '\x03' + "2 http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + '\x0F'); 
                                 }
-                           }
+                            }
                             else
                             {
                                 appsmsg += callbackapp.Key.ToString() + " ";
+
                                 if (!appname.Equals(""))
                                 {
                                     appsmsg += "(" + appname + ") ";
@@ -219,6 +229,7 @@ namespace IRCbot
                             Console.WriteLine("KEY: " + callbackpack.Key + " VALUE: " + callbackpack.Value);
                             packageslist.Add(callbackpack.Key);
                             String subname = getPackageName(callbackpack.Key.ToString());
+
                             if (!callback.Callback.CurrentChangeNumber.Equals(callbackpack.Value.ChangeNumber))
                             {
                                 if (!subname.Equals(""))
@@ -229,34 +240,34 @@ namespace IRCbot
                                 {
                                     irc.SendMessage(SendType.Message, channel, "Package: " + callbackpack.Key.ToString() + " - bundled changelist" + '\x03' + "7 " + callbackpack.Value.ChangeNumber + "\x0F -" + '\x03' + "2 http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + '\x0F');
                                 }
-                          }
+                            }
                             else
                             {
                                 subsmsg += callbackpack.Key.ToString() + " ";
+
                                 if (!subname.Equals(""))
                                 {
                                     subsmsg += "(" + subname + ") ";
                                 }
-                                
                             }
                         }
 
                         if (callback.Callback.AppChanges.Count != 0 && !appsmsg.Equals("Apps: "))
                         {
-                                irc.SendMessage(SendType.Message, channel, appsmsg);
+                            irc.SendMessage(SendType.Message, channel, appsmsg);
                         }
 
                         if (callback.Callback.PackageChanges.Count != 0 && !subsmsg.Equals("Packages: "))
                         {
-                                irc.SendMessage(SendType.Message, channel, subsmsg);
+                            irc.SendMessage(SendType.Message, channel, subsmsg);
                         }
+
                         PreviousChange = callback.Callback.CurrentChangeNumber;
-                        File.Delete(PrevChangeFile);
-                        File.WriteAllText(PrevChangeFile, callback.Callback.CurrentChangeNumber.ToString());
-                        //steamApps.PICSGetProductInfo(appslist, packageslist);
                     }
+
                     steamApps.PICSGetChangesSince(PreviousChange, true, true);
                 });
+
                 msg.Handle<SteamClient.JobCallback<SteamApps.PICSProductInfoCallback>>(callback =>
                 {
                     foreach (var unknownapp in callback.Callback.UnknownApps)
@@ -279,6 +290,7 @@ namespace IRCbot
                         irc.SendMessage(SendType.Message, channel, "http://raw.steamdb.info/sub/" + callbacksub.Key.ToString() + ".vdf");
                     }
                 });
+
                 msg.Handle<SteamClient.JobCallback<SteamUserStats.NumberOfPlayersCallback>>(callback =>
                 {
                     if (callback.Callback.Result != EResult.OK)

@@ -20,6 +20,7 @@ namespace IRCbot
         public static SteamUserStats stats = steamClient.GetHandler<SteamUserStats>();
         public static IrcClient irc = IRCbot.Program.irc;
         public static List<string> importantapps = new List<string>();
+        public static CustomCallbacks customHandler;
 
         private static string GetDBString(string SqlFieldName, MySqlDataReader Reader)
         {
@@ -131,6 +132,8 @@ namespace IRCbot
             string channel = ConfigurationManager.AppSettings["announce_channel"];
 
             LoadImportantApps();
+            steamClient.AddHandler(new CustomCallbacks());
+            customHandler = steamClient.GetHandler<CustomCallbacks>();
 
             steamClient.Connect();
 
@@ -159,6 +162,18 @@ namespace IRCbot
                     Thread.Sleep(TimeSpan.FromSeconds(15));
                     steamClient.Connect();
                 });
+<<<<<<< HEAD
+=======
+                msg.Handle<CustomCallbacks.MyCallback>(callback =>
+                {
+                    foreach (var announcement in callback.Result.Body.announcements)
+                    {
+                        Console.WriteLine(announcement.gid.ToString() + announcement.headline.ToString());
+                       // Console.WriteLine(steamId.ConvertToUInt64(callback.Result.Body.steamid_clan));
+                        irc.SendMessage(SendType.Message, "#steamdb", "Group announcement: " + Colors.GREEN + announcement.headline.ToString() + Colors.NORMAL + " - " + Colors.DARK_BLUE + "http://steamcommunity.com/gid/" + callback.Result.Body.steamid_clan + "#announcements/detail/" + announcement.gid + Colors.NORMAL);
+                    }
+                });
+>>>>>>> Implemented announcements support & colors
 
                 msg.Handle<SteamUser.LoggedOnCallback>(callback =>
                 {
@@ -175,8 +190,12 @@ namespace IRCbot
                         steamFriends.SetPersonaState(EPersonaState.Busy);
 
                         irc.SendMessage(SendType.Action, channel, "is now logged in.");
+<<<<<<< HEAD
 
                         steamApps.PICSGetChangesSince(PreviousChange, true, true);
+=======
+                        steamApps.PICSGetChangesSince(0, true, true);
+>>>>>>> Implemented announcements support & colors
                     }
                 });
 

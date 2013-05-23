@@ -46,7 +46,7 @@ namespace IRCbot
         {
             String name = "";
 
-            MySqlDataReader Reader = DbWorker.ExecuteReader(@"SELECT IF(StoreName = "", Name, StoreName) as Name FROM Apps WHERE AppID = @AppID", new MySqlParameter[]
+            MySqlDataReader Reader = DbWorker.ExecuteReader(@"SELECT IF(StoreName = '', Name, StoreName) as Name FROM Apps WHERE AppID = @AppID", new MySqlParameter[]
             {
                 new MySqlParameter("AppID", appid)
             });

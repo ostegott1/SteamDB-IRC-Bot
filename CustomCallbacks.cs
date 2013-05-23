@@ -10,10 +10,10 @@ namespace IRCbot
 {
     class CustomCallbacks : ClientMsgHandler
     {
-        public class MyCallback : CallbackMsg
+        public class announcementCallback : CallbackMsg
         {
             public ClientMsgProtobuf<CMsgClientClanState> Result { get; private set; }
-            internal MyCallback(ClientMsgProtobuf<CMsgClientClanState> res)
+            internal announcementCallback(ClientMsgProtobuf<CMsgClientClanState> res)
             {
                 Result = res;
             }
@@ -35,7 +35,7 @@ namespace IRCbot
         void HandleGroupAnnouncement(IPacketMsg packetMsg)
         {
             var announcementResponse = new ClientMsgProtobuf<CMsgClientClanState>(packetMsg);
-            Client.PostCallback(new MyCallback(announcementResponse));
+            Client.PostCallback(new announcementCallback(announcementResponse));
         }
     }
 }

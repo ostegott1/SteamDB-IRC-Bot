@@ -114,7 +114,7 @@ namespace IRCbot
         {
             uint PreviousChange = 0;
             string channel = ConfigurationManager.AppSettings["announce_channel"];
-
+            string updaterState = "None";
             LoadImportantApps();
             steamClient.AddHandler(new CustomCallbacks());
             customHandler = steamClient.GetHandler<CustomCallbacks>();
@@ -147,7 +147,30 @@ namespace IRCbot
                     steamClient.Connect();
                 });
 
-                msg.Handle<CustomCallbacks.MyCallback>(callback =>
+                msg.Handle<SteamFriends.PersonaStateCallback>(callback =>
+                {
+                    Console.WriteLine(callback.Name.ToString() + " + " + callback.State.ToString());
+                    if (callback.Name == "Jan")
+                    {
+                        if (updaterState == "None")
+                        {
+                            updaterState = callback.State.ToString();
+                        }
+                        else if (updaterState != callback.State.ToString())
+                        {
+                            if (callback.State == EPersonaState.Busy)
+                            {
+                                irc.SendMessage(SendType.Message, "#steamdb", "Updater is now back online.");
+                            }
+                            else
+                            {
+                                irc.SendMessage(SendType.Message, "#steamdb", "Hey xPaw and Alram, the updater (or Steam) died. :'(");
+                            }
+                            updaterState = callback.State.ToString();
+                        }
+                    }
+                });
+                msg.Handle<CustomCallbacks.announcementCallback>(callback =>
                 {
                     foreach (var announcement in callback.Result.Body.announcements)
                     {
@@ -165,10 +188,10 @@ namespace IRCbot
                     }
                     else
                     {
-                        steamFriends.SetPersonaName("Jan");
+                        steamFriends.SetPersonaName("Jan-willem");
                         steamFriends.SetPersonaState(EPersonaState.Busy);
                         irc.SendMessage(SendType.Action, channel, "is now logged in.");
-                        steamApps.PICSGetChangesSince(0, true, true);
+                        steamApps.PICSGetChangesSince(PreviousChange, true, true);
                     }
                 });
 

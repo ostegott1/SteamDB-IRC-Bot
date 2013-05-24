@@ -218,11 +218,13 @@ namespace IRCbot
                         List<uint> packageslist = new List<uint>();
                         string appsmsg = "Apps: ";
                         string subsmsg = "Packages: ";
-
-                        irc.SendMessage(SendType.Message, channel, "Received changelist " + Colors.OLIVE + PreviousChange + Colors.NORMAL + " with "
-                            + (callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.AppChanges.Count + Colors.NORMAL
-                            + " apps and " + (callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.PackageChanges.Count
-                            + Colors.NORMAL + " packages - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + PreviousChange + Colors.NORMAL);
+                        if (!callback.Callback.RequiresFullUpdate)
+                        {
+                            irc.SendMessage(SendType.Message, channel, "Received changelist " + Colors.OLIVE + PreviousChange + Colors.NORMAL + " with "
+                                + (callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.AppChanges.Count + Colors.NORMAL
+                                + " apps and " + (callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.PackageChanges.Count
+                                + Colors.NORMAL + " packages - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + PreviousChange + Colors.NORMAL);
+                        }
 
                         foreach (var callbackapp in callback.Callback.AppChanges)
                         {

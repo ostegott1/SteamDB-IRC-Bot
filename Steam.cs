@@ -167,11 +167,7 @@ namespace IRCbot
                         }
                         else if (updaterState != callback.State.ToString())
                         {
-                            if (callback.State == EPersonaState.Busy)
-                            {
-                                irc.SendMessage(SendType.Action, "#steamdb", "Updater is now back online :)");
-                            }
-                            else
+                            if (callback.State != EPersonaState.Busy)
                             {
                                 irc.SendMessage(SendType.Action, "#steamdb", "Updater (or Steam) just died :'( cc Alram and xPaw");
                             }

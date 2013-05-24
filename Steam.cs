@@ -184,7 +184,7 @@ namespace IRCbot
                         Console.WriteLine(announcement.gid.ToString() + announcement.headline.ToString());
 
                         irc.SendMessage(SendType.Message, "#steamdb", "Group announcement: " + Colors.GREEN + announcement.headline.ToString() + Colors.NORMAL
-                            + " - " + Colors.DARK_BLUE + "http://steamcommunity.com/gid/" + callback.Result.Body.steamid_clan + "/announcements/detail/" + announcement.gid + Colors.NORMAL);
+                            + " -" + Colors.DARK_BLUE + " http://steamcommunity.com/gid/" + callback.Result.Body.steamid_clan + "/announcements/detail/" + announcement.gid + Colors.NORMAL);
                     }
                 });
 
@@ -219,7 +219,7 @@ namespace IRCbot
                             irc.SendMessage(SendType.Message, channel, "Received changelist " + Colors.OLIVE + PreviousChange + Colors.NORMAL + " with "
                                 + (callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.AppChanges.Count + Colors.NORMAL
                                 + " apps and " + (callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE) + callback.Callback.PackageChanges.Count
-                                + Colors.NORMAL + " packages - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + PreviousChange + Colors.NORMAL);
+                                + Colors.NORMAL + " packages -" + Colors.DARK_BLUE + " http://steamdb.info/changelist.php?changeid=" + PreviousChange + Colors.NORMAL);
                         }
 
                         foreach (var callbackapp in callback.Callback.AppChanges)
@@ -229,7 +229,7 @@ namespace IRCbot
                             if (importantapps.Contains(callbackapp.Key.ToString()))
                             {
                                 irc.SendMessage(SendType.Message, "#steamdb", "Important app update: " + Colors.OLIVE + appname + Colors.NORMAL
-                                    + " - " + Colors.DARK_BLUE + "http://steamdb.info/app/" + callbackapp.Key.ToString() + "/#section_history" + Colors.NORMAL);
+                                    + " -" + Colors.DARK_BLUE + " http://steamdb.info/app/" + callbackapp.Key.ToString() + "/#section_history" + Colors.NORMAL);
                             }
 
                             appslist.Add(callbackapp.Key);
@@ -240,13 +240,13 @@ namespace IRCbot
                                 {
                                     irc.SendMessage(SendType.Message, channel, "App: " + Colors.LIGHT_GRAY + callbackapp.Key.ToString() + Colors.NORMAL + " (" + appname + ")"
                                         + " - bundled changelist " + Colors.OLIVE + callbackapp.Value.ChangeNumber + Colors.NORMAL
-                                        + " - " + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + Colors.NORMAL); 
+                                        + " -" + Colors.DARK_BLUE + " http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + Colors.NORMAL); 
                                 }
                                 else
                                 {
                                     irc.SendMessage(SendType.Message, channel, "App: " + Colors.LIGHT_GRAY + callbackapp.Key.ToString() + Colors.NORMAL + " - bundled changelist "
-                                        + Colors.OLIVE + callbackapp.Value.ChangeNumber + Colors.NORMAL + " - "
-                                        + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + Colors.NORMAL); 
+                                        + Colors.OLIVE + callbackapp.Value.ChangeNumber + Colors.NORMAL + " -"
+                                        + Colors.DARK_BLUE + " http://steamdb.info/changelist.php?changeid=" + callbackapp.Value.ChangeNumber + Colors.NORMAL); 
                                 }
                             }
                             else
@@ -268,8 +268,8 @@ namespace IRCbot
 
                             if( callbackpack.Key == 0 )
                             {
-                                irc.SendMessage(SendType.Message, "#steamdb", "Important package update: " + Colors.OLIVE + subname + Colors.NORMAL + " - "
-                                    + Colors.DARK_BLUE + "http://steamdb.info/sub/" + callbackpack.Key.ToString() + "/#section_history" + Colors.NORMAL);
+                                irc.SendMessage(SendType.Message, "#steamdb", "Important package update: " + Colors.OLIVE + subname + Colors.NORMAL + " -"
+                                    + Colors.DARK_BLUE + " http://steamdb.info/sub/" + callbackpack.Key.ToString() + "/#section_history" + Colors.NORMAL);
                             }
 
                             packageslist.Add(callbackpack.Key);
@@ -279,14 +279,14 @@ namespace IRCbot
                                 if (!subname.Equals(""))
                                 {
                                     irc.SendMessage(SendType.Message, channel, "Package: " + Colors.LIGHT_GRAY + callbackpack.Key.ToString() + Colors.NORMAL + " (" + subname + ")"
-                                        + " - bundled changelist " + Colors.OLIVE + callbackpack.Value.ChangeNumber + Colors.NORMAL + " - "
-                                        + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + Colors.NORMAL);
+                                        + " - bundled changelist " + Colors.OLIVE + callbackpack.Value.ChangeNumber + Colors.NORMAL + " -"
+                                        + Colors.DARK_BLUE + " http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + Colors.NORMAL);
                                 }
                                 else
                                 {
-                                    irc.SendMessage(SendType.Message, channel, "Package: " + Colors.LIGHT_GRAY + callbackpack.Key.ToString() + Colors.NORMAL + " - bundled changelist "
+                                    irc.SendMessage(SendType.Message, channel, "Package: " + Colors.LIGHT_GRAY + callbackpack.Key.ToString() + Colors.NORMAL + " - bundled changelist"
                                         + Colors.OLIVE + callbackpack.Value.ChangeNumber + Colors.NORMAL + " - "
-                                        + Colors.DARK_BLUE + "http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + Colors.NORMAL);
+                                        + Colors.DARK_BLUE + " http://steamdb.info/changelist.php?changeid=" + callbackpack.Value.ChangeNumber + Colors.NORMAL);
                                 }
                             }
                             else
@@ -344,8 +344,8 @@ namespace IRCbot
 
                         callbackapp.Value.KeyValues.SaveToFile("app/" + ID + ".vdf", false);
 
-                        irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + Name + Colors.NORMAL + " - "
-                            + Colors.DARK_BLUE + "http://raw.steamdb.info/app/" + ID + ".vdf" + Colors.NORMAL);
+                        irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + Name + Colors.NORMAL + " -"
+                            + Colors.DARK_BLUE + " http://raw.steamdb.info/app/" + ID + ".vdf" + Colors.NORMAL);
                     }
 
                     foreach (var callbacksub in callback.Callback.Packages)
@@ -365,8 +365,8 @@ namespace IRCbot
 
                         kv.SaveToFile("sub/" + ID + ".vdf", false);
 
-                        irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + Name + Colors.NORMAL + " - "
-                            + Colors.DARK_BLUE + "http://raw.steamdb.info/sub/" + ID + ".vdf" + Colors.NORMAL);
+                        irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + Name + Colors.NORMAL + " -"
+                            + Colors.DARK_BLUE + " http://raw.steamdb.info/sub/" + ID + ".vdf" + Colors.NORMAL);
                     }
                 });
 

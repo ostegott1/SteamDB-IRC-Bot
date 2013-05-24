@@ -58,6 +58,10 @@ namespace IRCbot
                             irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid AppID format!");
                         }
                     }
+                    else
+                    {
+                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Usage: !app <appid>");
+                    }
 
                     break;
                 }
@@ -76,6 +80,10 @@ namespace IRCbot
                             irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid SubID format!");
                         }
                     }
+                    else
+                    {
+                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Usage: !sub <subid>");
+                    }
 
                     break;
                 }
@@ -91,6 +99,10 @@ namespace IRCbot
                     {
                         irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid NumPlayers format!");
                     }
+                    else
+                    {
+                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Usage: !numplayers <appid>");
+                    }
 
                     break;
                 }
@@ -98,6 +110,8 @@ namespace IRCbot
                 {
                     // TODO: Check if user is op
                     Steam.LoadImportantApps();
+
+                    irc.SendMessage(SendType.Action, "#steamdb-announce", "reloaded important apps");
 
                     break;
                 }

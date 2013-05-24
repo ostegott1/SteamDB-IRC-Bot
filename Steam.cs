@@ -255,7 +255,7 @@ namespace IRCbot
                             }
                             else
                             {
-                                appsmsg += callbackapp.Key.ToString() + " ";
+                                appsmsg += Colors.LIGHT_GRAY + callbackapp.Key.ToString() + Colors.NORMAL + " ";
 
                                 if (!appname.Equals(""))
                                 {
@@ -295,7 +295,7 @@ namespace IRCbot
                             }
                             else
                             {
-                                subsmsg += callbackpack.Key.ToString() + " ";
+                                subsmsg += Colors.LIGHT_GRAY + callbackpack.Key.ToString() + Colors.NORMAL + " ";
 
                                 if (!subname.Equals(""))
                                 {

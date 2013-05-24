@@ -45,18 +45,11 @@ namespace IRCbot
             {
                 case "!app":
                 {
-                    if (!e.Data.MessageArray[1].ToString().Equals(""))
-                    {
-                        uint appid;
+                    uint appid;
 
-                        if (uint.TryParse(e.Data.MessageArray[1].ToString(), out appid))
-                        {
-                            Steam.DumpApp(appid);
-                        }
-                        else
-                        {
-                            irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid AppID format!");
-                        }
+                    if (e.Data.MessageArray.Length == 2 && uint.TryParse(e.Data.MessageArray[1].ToString(), out appid))
+                    {
+                        Steam.DumpApp(appid);
                     }
                     else
                     {
@@ -67,18 +60,11 @@ namespace IRCbot
                 }
                 case "!sub":
                 {
-                    if (!e.Data.MessageArray[1].ToString().Equals(""))
-                    {
-                        uint subid;
+                    uint subid;
 
-                        if (uint.TryParse(e.Data.MessageArray[1].ToString(), out subid))
-                        {
-                            Steam.DumpSub(subid);
-                        }
-                        else
-                        {
-                            irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid SubID format!");
-                        }
+                    if (e.Data.MessageArray.Length == 2 && uint.TryParse(e.Data.MessageArray[1].ToString(), out subid))
+                    {
+                        Steam.DumpSub(subid);
                     }
                     else
                     {
@@ -91,7 +77,7 @@ namespace IRCbot
                 {
                     uint targetapp;
 
-                    if (uint.TryParse(e.Data.MessageArray[1].ToString(), out targetapp))
+                    if (e.Data.MessageArray.Length == 2 && uint.TryParse(e.Data.MessageArray[1].ToString(), out targetapp))
                     {
                         Steam.getNumPlayers(targetapp);
                     }
@@ -104,11 +90,15 @@ namespace IRCbot
                 }
                 case "!reload":
                 {
-                    // TODO: Check if user is op
-                    Steam.LoadImportantApps();
-
-                    irc.SendMessage(SendType.Action, "#steamdb-announce", "reloaded important apps");
-
+                    Channel ircChannel = irc.GetChannel(e.Data.Channel);
+                    foreach (ChannelUser user in ircChannel.Users.Values)
+                    {
+                        if (user.IsOp && e.Data.Nick == user.Nick)
+                        {
+                            Steam.LoadImportantApps();
+                            irc.SendMessage(SendType.Action, "#steamdb-announce", "reloaded important apps");
+                        }
+                    }
                     break;
                 }
             }

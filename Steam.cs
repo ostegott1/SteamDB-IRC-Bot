@@ -188,7 +188,7 @@ namespace IRCbot
                         Console.WriteLine(announcement.gid.ToString() + announcement.headline.ToString());
 
                         irc.SendMessage(SendType.Message, "#steamdb", "Group announcement: " + Colors.GREEN + announcement.headline.ToString() + Colors.NORMAL
-                            + " - " + Colors.DARK_BLUE + "http://steamcommunity.com/gid/" + callback.Result.Body.steamid_clan + "#announcements/detail/" + announcement.gid + Colors.NORMAL);
+                            + " - " + Colors.DARK_BLUE + "http://steamcommunity.com/gid/" + callback.Result.Body.steamid_clan + "/announcements/detail/" + announcement.gid + Colors.NORMAL);
                     }
                 });
 

@@ -22,7 +22,7 @@ namespace IRCbot
         public override void HandleMsg(IPacketMsg packetMsg)
         {
 
-            Console.WriteLine(packetMsg.MsgType.ToString());
+            //Console.WriteLine(packetMsg.MsgType.ToString());
             // the MsgType exposes the EMsg (type) of the message
             switch (packetMsg.MsgType)
             {

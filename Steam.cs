@@ -318,6 +318,9 @@ namespace IRCbot
 
                 msg.Handle<SteamClient.JobCallback<SteamApps.PICSProductInfoCallback>>(callback =>
                 {
+                	string Name = "";
+                	string ID = "";
+                	
                     foreach (var unknownapp in callback.Callback.UnknownApps)
                     {
                         irc.SendMessage(SendType.Message, channel, "Unknown app: " + Colors.LIGHT_GRAY + unknownapp.ToString() + Colors.NORMAL);
@@ -330,23 +333,41 @@ namespace IRCbot
 
                     foreach (var callbackapp in callback.Callback.Apps)
                     {
-                        callbackapp.Value.KeyValues.SaveToFile("app/" + callbackapp.Key.ToString() + ".vdf", false);
+                        ID = callbackapp.Key.ToString();
 
-                        string AppName = app.Value.KeyValues["common"]["name"].Value == null ? "" : app.Value.KeyValues["common"]["name"].Value.ToString();
+                        if (app.Value.KeyValues["common"]["name"].Value == null)
+                        {
+                            Name = "AppID " + ID;
+                        }
+                        else
+                        {
+                            Name = app.Value.KeyValues["common"]["name"].Value.ToString();
+                        }
 
-                        irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + AppName + Colors.NORMAL + " - "
-                            + Colors.DARK_BLUE + "http://raw.steamdb.info/app/" + callbackapp.Key.ToString() + ".vdf" + Colors.NORMAL);
+                        callbackapp.Value.KeyValues.SaveToFile("app/" + ID + ".vdf", false);
+
+                        irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + Name + Colors.NORMAL + " - "
+                            + Colors.DARK_BLUE + "http://raw.steamdb.info/app/" + ID + ".vdf" + Colors.NORMAL);
                     }
 
                     foreach (var callbacksub in callback.Callback.Packages)
                     {
-                        var kv = callback.Callback.Packages[uint.Parse(callbacksub.Key.ToString())].KeyValues.Children.FirstOrDefault();
-                        kv.SaveToFile("sub/" + callbacksub.Key.ToString() + ".vdf", false);
+                        ID = callbacksub.Key.ToString();
 
-                        string PackageName = kv["name"].Value == null ? "" : kv["name"].Value.ToString();
+                        if (kv["name"].Value == null == null)
+                        {
+                            Name = "SubID " + ID;
+                        }
+                        else
+                        {
+                            Name = kv["name"].Value.ToString();
+                        }
 
-                        irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + PackageName + Colors.NORMAL + " - "
-                            + Colors.DARK_BLUE + "http://raw.steamdb.info/sub/" + callbacksub.Key.ToString() + ".vdf" + Colors.NORMAL);
+                        var kv = callback.Callback.Packages[uint.Parse(ID)].KeyValues.Children.FirstOrDefault();
+                        kv.SaveToFile("sub/" + ID + ".vdf", false);
+
+                        irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + Name + Colors.NORMAL + " - "
+                            + Colors.DARK_BLUE + "http://raw.steamdb.info/sub/" +  + ".vdf" + Colors.NORMAL);
                     }
                 });
 

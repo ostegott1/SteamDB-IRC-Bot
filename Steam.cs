@@ -370,7 +370,7 @@ namespace IRCbot
                         kv.SaveToFile("sub/" + ID + ".vdf", false);
 
                         irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + Name + Colors.NORMAL + " - "
-                            + Colors.DARK_BLUE + "http://raw.steamdb.info/sub/" +  ".vdf" + Colors.NORMAL);
+                            + Colors.DARK_BLUE + "http://raw.steamdb.info/sub/" + ID + ".vdf" + Colors.NORMAL);
                     }
                 });
 

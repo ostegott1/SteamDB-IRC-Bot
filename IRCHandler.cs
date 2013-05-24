@@ -97,10 +97,6 @@ namespace IRCbot
                     }
                     else
                     {
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Invalid NumPlayers format!");
-                    }
-                    else
-                    {
                         irc.SendMessage(SendType.Message, "#steamdb-announce", "Usage: !numplayers <appid>");
                     }
 

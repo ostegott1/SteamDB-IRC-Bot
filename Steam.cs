@@ -335,13 +335,13 @@ namespace IRCbot
                     {
                         ID = callbackapp.Key.ToString();
 
-                        if (app.Value.KeyValues["common"]["name"].Value == null)
+                        if (callbackapp.Value.KeyValues["common"]["name"].Value == null)
                         {
                             Name = "AppID " + ID;
                         }
                         else
                         {
-                            Name = app.Value.KeyValues["common"]["name"].Value.ToString();
+                            Name = callbackapp.Value.KeyValues["common"]["name"].Value.ToString();
                         }
 
                         callbackapp.Value.KeyValues.SaveToFile("app/" + ID + ".vdf", false);
@@ -354,7 +354,9 @@ namespace IRCbot
                     {
                         ID = callbacksub.Key.ToString();
 
-                        if (kv["name"].Value == null == null)
+                        var kv = callback.Callback.Packages[uint.Parse(ID)].KeyValues.Children.FirstOrDefault();
+
+                        if (kv["name"].Value == null)
                         {
                             Name = "SubID " + ID;
                         }
@@ -363,11 +365,10 @@ namespace IRCbot
                             Name = kv["name"].Value.ToString();
                         }
 
-                        var kv = callback.Callback.Packages[uint.Parse(ID)].KeyValues.Children.FirstOrDefault();
                         kv.SaveToFile("sub/" + ID + ".vdf", false);
 
                         irc.SendMessage(SendType.Message, channel, "Dump for " + Colors.OLIVE + Name + Colors.NORMAL + " - "
-                            + Colors.DARK_BLUE + "http://raw.steamdb.info/sub/" +  + ".vdf" + Colors.NORMAL);
+                            + Colors.DARK_BLUE + "http://raw.steamdb.info/sub/" +  ".vdf" + Colors.NORMAL);
                     }
                 });
 
@@ -375,7 +376,7 @@ namespace IRCbot
                 {
                     if (callback.Callback.Result != EResult.OK)
                     {
-                        irc.SendMessage(SendType.Message, channel, "Unable to request player count:" + callback.Result);
+                        irc.SendMessage(SendType.Message, channel, "Unable to request player count:" + callback.Callback.Result);
                     }
                     else
                     {

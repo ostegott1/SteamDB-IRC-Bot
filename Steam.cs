@@ -116,8 +116,8 @@ namespace IRCbot
         public static void Loop()
         {
             uint PreviousChange = 0;
+            EPersonaState updaterState = -1;
             string channel = ConfigurationManager.AppSettings["announce_channel"];
-            string updaterState = "None";
 
             LoadImportantApps();
 
@@ -134,6 +134,8 @@ namespace IRCbot
 
                 msg.Handle<SteamClient.ConnectedCallback>(callback =>
                 {
+                    updaterState = -1;
+
                     if (callback.Result != EResult.OK)
                     {
                         irc.SendMessage(SendType.Action, channel, "failed to connect: " + callback.Result);
@@ -157,22 +159,26 @@ namespace IRCbot
 
                 msg.Handle<SteamFriends.PersonaStateCallback>(callback =>
                 {
-                    Console.WriteLine(callback.Name.ToString() + " + " + callback.State.ToString());
+                    Console.WriteLine(callback.Name.ToString() + " - State: " + callback.State.ToString() + " - PreviousChange: " + PreviousChange );
 
-                    if (PreviousChange > 0 && callback.Name == "Jan")
+                    if (PreviousChange > 0 && callback.Name.Equals("Jan"))
                     {
-                        if (updaterState == "None")
+                        if (updaterState != callback.State)
                         {
-                            updaterState = callback.State.ToString();
-                        }
-                        else if (updaterState != callback.State.ToString())
-                        {
-                            if (callback.State != EPersonaState.Busy)
+                            if (updaterState != -1)
                             {
-                                irc.SendMessage(SendType.Action, "#steamdb", "Updater (or Steam) just died :'( cc Alram and xPaw");
+                                if (callback.State == EPersonaState.Busy)
+                                {
+                                    irc.SendMessage(SendType.Action, channel, "Updater is back online"); // TODO: Test this message in announce channel for now, can switch to main channel later
+                                }
+                                else
+                                {
+                                    irc.SendMessage(SendType.Action, "#steamdb", "Updater (or Steam) just died :'( cc Alram and xPaw");
+                                    irc.SendMessage(SendType.Action, channel, "Updater (or Steam) just died :'("); // Send to both channels
+                                }
                             }
 
-                            updaterState = callback.State.ToString();
+                            updaterState = callback.State;
                         }
                     }
                 });
@@ -212,8 +218,9 @@ namespace IRCbot
 
                         List<uint> appslist = new List<uint>();
                         List<uint> packageslist = new List<uint>();
-                        string appsmsg = "Apps: ";
-                        string subsmsg = "Packages: ";
+                        string appsmsg = "";
+                        string subsmsg = "";
+
                         if (!callback.Callback.RequiresFullUpdate)
                         {
                             irc.SendMessage(SendType.Message, channel, "Received changelist " + Colors.OLIVE + PreviousChange + Colors.NORMAL + " with "
@@ -251,11 +258,11 @@ namespace IRCbot
                             }
                             else
                             {
-                                appsmsg += Colors.LIGHT_GRAY + callbackapp.Key.ToString() + Colors.NORMAL + " ";
+                                appsmsg += " " + Colors.LIGHT_GRAY + callbackapp.Key.ToString() + Colors.NORMAL;
 
                                 if (!appname.Equals(""))
                                 {
-                                    appsmsg += "(" + appname + ") ";
+                                    appsmsg += " (" + appname + ")";
                                 }
                             }
                         }
@@ -291,23 +298,23 @@ namespace IRCbot
                             }
                             else
                             {
-                                subsmsg += Colors.LIGHT_GRAY + callbackpack.Key.ToString() + Colors.NORMAL + " ";
+                                subsmsg += " " + Colors.LIGHT_GRAY + callbackpack.Key.ToString() + Colors.NORMAL;
 
                                 if (!subname.Equals(""))
                                 {
-                                    subsmsg += "(" + subname + ") ";
+                                    subsmsg += " (" + subname + ")";
                                 }
                             }
                         }
 
-                        if (callback.Callback.AppChanges.Count != 0 && !appsmsg.Equals("Apps: "))
+                        if (!appsmsg.Equals(""))
                         {
-                            irc.SendMessage(SendType.Message, channel, appsmsg);
+                            irc.SendMessage(SendType.Message, channel, "Apps: " + appsmsg);
                         }
 
-                        if (callback.Callback.PackageChanges.Count != 0 && !subsmsg.Equals("Packages: "))
+                        if (!subsmsg.Equals(""))
                         {
-                            irc.SendMessage(SendType.Message, channel, subsmsg);
+                            irc.SendMessage(SendType.Message, channel, "Packages: " + subsmsg);
                         }
                     }
 
@@ -316,9 +323,9 @@ namespace IRCbot
 
                 msg.Handle<SteamClient.JobCallback<SteamApps.PICSProductInfoCallback>>(callback =>
                 {
-                	string Name = "";
-                	string ID = "";
-                	
+                    string Name = "";
+                    string ID = "";
+
                     foreach (var unknownapp in callback.Callback.UnknownApps)
                     {
                         irc.SendMessage(SendType.Message, channel, "Unknown app: " + Colors.LIGHT_GRAY + unknownapp.ToString() + Colors.NORMAL);
@@ -374,7 +381,7 @@ namespace IRCbot
                 {
                     if (callback.Callback.Result != EResult.OK)
                     {
-                        irc.SendMessage(SendType.Message, channel, "Unable to request player count:" + callback.Callback.Result);
+                        irc.SendMessage(SendType.Message, channel, "Unable to request player count: " + callback.Callback.Result);
                     }
                     else
                     {

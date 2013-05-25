@@ -309,12 +309,12 @@ namespace IRCbot
 
                         if (!appsmsg.Equals(""))
                         {
-                            irc.SendMessage(SendType.Message, channel, "Apps: " + appsmsg);
+                            irc.SendMessage(SendType.Message, channel, "Apps:" + appsmsg);
                         }
 
                         if (!subsmsg.Equals(""))
                         {
-                            irc.SendMessage(SendType.Message, channel, "Packages: " + subsmsg);
+                            irc.SendMessage(SendType.Message, channel, "Packages:" + subsmsg);
                         }
                     }
 

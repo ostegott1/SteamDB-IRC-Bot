@@ -39,6 +39,16 @@ namespace IRCbot
     {
         public static IrcClient irc = IRCbot.Program.irc;
 
+        public void Send( string channel, string format, params object[] args )
+        {
+            irc.SendMessage( SendType.Message, channel, string.Format( format, args ) );
+        }
+
+        public void SendEmote( string channel, string format, params object[] args )
+        {
+            irc.SendMessage( SendType.Action, channel, string.Format( format, args ) );
+        }
+
         public static void OnChannelMessage(object sender, IrcEventArgs e)
         {
             switch (e.Data.MessageArray[0])
@@ -53,7 +63,7 @@ namespace IRCbot
                     }
                     else
                     {
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Usage: !app <appid>");
+                        Send("#steamdb-announce", "Usage: !app <appid>");
                     }
 
                     break;
@@ -68,7 +78,7 @@ namespace IRCbot
                     }
                     else
                     {
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Usage: !sub <subid>");
+                        Send("#steamdb-announce", "Usage: !sub <subid>");
                     }
 
                     break;
@@ -83,7 +93,7 @@ namespace IRCbot
                     }
                     else
                     {
-                        irc.SendMessage(SendType.Message, "#steamdb-announce", "Usage: !numplayers <appid>");
+                        Send("#steamdb-announce", "Usage: !numplayers <appid>");
                     }
 
                     break;
@@ -91,14 +101,16 @@ namespace IRCbot
                 case "!reload":
                 {
                     Channel ircChannel = irc.GetChannel(e.Data.Channel);
+
                     foreach (ChannelUser user in ircChannel.Users.Values)
                     {
                         if (user.IsOp && e.Data.Nick == user.Nick)
                         {
                             Steam.LoadImportantApps();
-                            irc.SendMessage(SendType.Action, "#steamdb-announce", "reloaded important apps");
+                            SendEmote("#steamdb-announce", "reloaded important apps");
                         }
                     }
+
                     break;
                 }
             }

@@ -116,7 +116,7 @@ namespace IRCbot
         public static void Loop()
         {
             uint PreviousChange = 0;
-            EPersonaState updaterState = -1;
+            EPersonaState updaterState = EPersonaState.Max;
             string channel = ConfigurationManager.AppSettings["announce_channel"];
 
             LoadImportantApps();
@@ -134,7 +134,7 @@ namespace IRCbot
 
                 msg.Handle<SteamClient.ConnectedCallback>(callback =>
                 {
-                    updaterState = -1;
+                    updaterState = EPersonaState.Max;
 
                     if (callback.Result != EResult.OK)
                     {
@@ -165,7 +165,7 @@ namespace IRCbot
                     {
                         if (updaterState != callback.State)
                         {
-                            if (updaterState != -1)
+                            if (updaterState != EPersonaState.Max)
                             {
                                 if (callback.State == EPersonaState.Busy)
                                 {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SteamKit2;
-using Meebey.SmartIrc4net;
 using System.Threading;
 using System.IO;
 using System.Configuration;
@@ -227,7 +226,7 @@ namespace IRCbot
                             // Colors are fun
                             IRCHandler.Send(channel, "Received changelist {0}{1}{2} with {3}{4}{5} apps and {6}{7}{8} packages -{9} http://steamdb.info/changelist.php?changeid={10}",
                                 Colors.OLIVE, PreviousChange, Colors.NORMAL,
-                                callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.PackageChanges.Count, Colors.NORMAL,
+                                callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.AppChanges.Count, Colors.NORMAL,
                                 callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.PackageChanges.Count, Colors.NORMAL,
                                 Colors.DARK_BLUE, PreviousChange
                             );

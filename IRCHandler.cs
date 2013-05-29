@@ -39,12 +39,12 @@ namespace IRCbot
     {
         public static IrcClient irc = IRCbot.Program.irc;
 
-        public void Send( string channel, string format, params object[] args )
+        public static void Send( string channel, string format, params object[] args )
         {
             irc.SendMessage( SendType.Message, channel, string.Format( format, args ) );
         }
 
-        public void SendEmote( string channel, string format, params object[] args )
+        public static void SendEmote( string channel, string format, params object[] args )
         {
             irc.SendMessage( SendType.Action, channel, string.Format( format, args ) );
         }

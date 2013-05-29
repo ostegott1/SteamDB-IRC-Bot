@@ -12,13 +12,14 @@ namespace IRCbot
 {
     class Steam
     {
-        public static SteamClient steamClient = new SteamClient();
-        public static SteamUser steamUser = steamClient.GetHandler<SteamUser>();
-        public static SteamApps steamApps = steamClient.GetHandler<SteamApps>();
-        public static SteamFriends steamFriends = steamClient.GetHandler<SteamFriends>();
-        public static SteamUserStats stats = steamClient.GetHandler<SteamUserStats>();
-        public static List<string> importantapps = new List<string>();
-        public static CustomCallbacks customHandler;
+        static SteamClient steamClient = new SteamClient();
+        static SteamUser steamUser = steamClient.GetHandler<SteamUser>();
+        static SteamApps steamApps = steamClient.GetHandler<SteamApps>();
+        static SteamFriends steamFriends = steamClient.GetHandler<SteamFriends>();
+        static SteamUserStats stats = steamClient.GetHandler<SteamUserStats>();
+        static List<string> importantapps = new List<string>();
+        static CustomCallbacks customHandler;
+        static CallbackManager manager;
 
         private static string GetDBString(string SqlFieldName, MySqlDataReader Reader)
         {
@@ -119,67 +120,26 @@ namespace IRCbot
 
             LoadImportantApps();
 
+            manager = new CallbackManager(steamClient);
+
+            new Callback<SteamClient.ConnectedCallback>(OnConnected, manager);
+            new Callback<SteamClient.DisconnectedCallback>(OnDisconnected, manager);
+
+            new Callback<SteamUser.LoggedOnCallback>(OnLoggedOn, manager);
+            new Callback<SteamUser.LoggedOffCallback>(OnLoggedOff, manager);
+
+            new Callback<SteamFriends.PersonaStateCallback>(OnPersonaState, manager);
+
             steamClient.AddHandler(new CustomCallbacks());
             customHandler = steamClient.GetHandler<CustomCallbacks>();
 
             steamClient.Connect();
 
-            bool running = true;
+            bool isRunning = true;
 
-            while (running)
+            while (isRunning)
             {
                 CallbackMsg msg = steamClient.WaitForCallback(true);
-
-                msg.Handle<SteamClient.ConnectedCallback>(callback =>
-                {
-                    updaterState = EPersonaState.Max;
-
-                    if (callback.Result != EResult.OK)
-                    {
-                        IRCHandler.SendEmote(channel, "failed to connect: " + callback.Result);
-
-                        throw new Exception("Could not connect: " + callback.Result);
-                    }
-
-                    steamUser.LogOn(new SteamUser.LogOnDetails
-                    {
-                        Username = ConfigurationManager.AppSettings["steam-username"],
-                        Password = ConfigurationManager.AppSettings["steam-password"]
-                    });
-                });
-
-                msg.Handle<SteamClient.DisconnectedCallback>(callback =>
-                {
-                    IRCHandler.SendEmote(channel, "disconnected from Steam, reconnecting...");
-                    Thread.Sleep(TimeSpan.FromSeconds(15));
-                    steamClient.Connect();
-                });
-
-                msg.Handle<SteamFriends.PersonaStateCallback>(callback =>
-                {
-                    Console.WriteLine(callback.Name.ToString() + " - State: " + callback.State.ToString() + " - PreviousChange: " + PreviousChange );
-
-                    if (PreviousChange > 0 && callback.Name.Equals("Jan"))
-                    {
-                        if (updaterState != callback.State)
-                        {
-                            if (updaterState != EPersonaState.Max)
-                            {
-                                if (callback.State == EPersonaState.Busy)
-                                {
-                                    IRCHandler.SendEmote(channel, "Updater is back online"); // TODO: Test this message in announce channel for now, can switch to main channel later
-                                }
-                                else
-                                {
-                                    IRCHandler.SendEmote("#steamdb", "Updater (or Steam) just died :'( cc Alram and xPaw");
-                                    IRCHandler.SendEmote(channel, "Updater (or Steam) just died :'("); // Send to both channels
-                                }
-                            }
-
-                            updaterState = callback.State;
-                        }
-                    }
-                });
 
                 msg.Handle<CustomCallbacks.announcementCallback>(callback =>
                 {
@@ -191,22 +151,6 @@ namespace IRCbot
                     }
 
                     // TODO: Add support for group events
-                });
-
-                msg.Handle<SteamUser.LoggedOnCallback>(callback =>
-                {
-                    if (callback.Result != EResult.OK)
-                    {
-                        IRCHandler.SendEmote(channel, "failed to log in: " + callback.Result);
-                        System.Threading.Thread.Sleep(1000);
-                    }
-                    else
-                    {
-                        steamFriends.SetPersonaName("Jan-willem");
-                        steamFriends.SetPersonaState(EPersonaState.Busy);
-                        IRCHandler.SendEmote(channel, "is now logged in.");
-                        steamApps.PICSGetChangesSince(PreviousChange, true, true);
-                    }
                 });
 
                 msg.Handle<SteamClient.JobCallback<SteamApps.PICSChangesCallback>>(callback =>
@@ -371,6 +315,82 @@ namespace IRCbot
                         IRCHandler.Send(channel, "Players: {0}", callback.Callback.NumPlayers.ToString());
                     }
                 });
+            }
+        }
+
+        static void OnConnected(SteamClient.ConnectedCallback callback)
+        {
+            updaterState = EPersonaState.Max;
+
+            if (callback.Result != EResult.OK)
+            {
+                IRCHandler.SendEmote(channel, "failed to connect: " + callback.Result);
+
+                throw new Exception("Could not connect: " + callback.Result);
+            }
+
+            steamUser.LogOn(new SteamUser.LogOnDetails
+            {
+                Username = ConfigurationManager.AppSettings["steam-username"],
+                Password = ConfigurationManager.AppSettings["steam-password"]
+            });
+        }
+
+        static void OnDisconnected(SteamClient.DisconnectedCallback callback)
+        {
+            IRCHandler.SendEmote(channel, "disconnected from Steam, reconnecting...");
+
+            Thread.Sleep(TimeSpan.FromSeconds(15));
+
+            steamClient.Connect();
+        }
+
+        static void OnLoggedOn(SteamUser.LoggedOnCallback callback)
+        {
+            if (callback.Result != EResult.OK)
+            {
+                IRCHandler.SendEmote(channel, "failed to log in: " + callback.Result);
+
+                Thread.Sleep(TimeSpan.FromSeconds(2));
+            }
+            else
+            {
+                steamFriends.SetPersonaName("Jan-willem");
+                steamFriends.SetPersonaState(EPersonaState.Busy);
+                steamApps.PICSGetChangesSince(PreviousChange, true, true);
+
+                IRCHandler.SendEmote(channel, "is now logged in.");
+            }
+        }
+
+        static void OnLoggedOff(SteamUser.LoggedOffCallback callback)
+        {
+            IRCHandler.SendEmote(channel, "logged off of Steam.");
+        }
+
+        static void OnPersonaState(SteamFriends.PersonaStateCallback callback)
+        {
+            Console.WriteLine(callback.Name.ToString() + " - State: " + callback.State.ToString() + " - PreviousChange: " + PreviousChange);
+
+            if (PreviousChange > 0 && callback.Name.Equals("Jan"))
+            {
+                if (updaterState != callback.State)
+                {
+                    if (updaterState != EPersonaState.Max)
+                    {
+                        if (callback.State == EPersonaState.Busy)
+                        {
+                            IRCHandler.SendEmote(channel, "Updater is back online"); // TODO: Test this message in announce channel for now, can switch to main channel later
+                        }
+                        else
+                        {
+                            IRCHandler.SendEmote("#steamdb", "Updater (or Steam) just died :'( cc Alram and xPaw");
+                            IRCHandler.SendEmote(channel, "Updater (or Steam) just died :'("); // Send to both channels
+                        }
+                    }
+
+                    updaterState = callback.State;
+                }
             }
         }
     }

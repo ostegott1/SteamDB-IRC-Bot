@@ -20,6 +20,9 @@ namespace IRCbot
         static List<string> importantapps = new List<string>();
         static CustomCallbacks customHandler;
         static CallbackManager manager;
+        static uint PreviousChange = 0;
+        static string channel;
+        static EPersonaState updaterState = EPersonaState.Max;
 
         private static string GetDBString(string SqlFieldName, MySqlDataReader Reader)
         {
@@ -114,9 +117,7 @@ namespace IRCbot
 
         public static void Loop()
         {
-            uint PreviousChange = 0;
-            EPersonaState updaterState = EPersonaState.Max;
-            string channel = ConfigurationManager.AppSettings["announce_channel"];
+            channel = ConfigurationManager.AppSettings["announce_channel"];
 
             LoadImportantApps();
 
@@ -130,6 +131,10 @@ namespace IRCbot
 
             new Callback<SteamFriends.PersonaStateCallback>(OnPersonaState, manager);
 
+            new JobCallback<SteamApps.PICSChangesCallback>(OnPICSChanges, manager);
+            new JobCallback<SteamApps.PICSProductInfoCallback>(OnPICSProductInfo, manager);
+            new JobCallback<SteamUserStats.NumberOfPlayersCallback>(OnNumberOfPlayers, manager);
+
             steamClient.AddHandler(new CustomCallbacks());
             customHandler = steamClient.GetHandler<CustomCallbacks>();
 
@@ -141,6 +146,7 @@ namespace IRCbot
             {
                 CallbackMsg msg = steamClient.WaitForCallback(true);
 
+                // TODO: Use SteamKit's ClanState callback
                 msg.Handle<CustomCallbacks.announcementCallback>(callback =>
                 {
                     foreach (var announcement in callback.Result.Body.announcements)
@@ -151,169 +157,6 @@ namespace IRCbot
                     }
 
                     // TODO: Add support for group events
-                });
-
-                msg.Handle<SteamClient.JobCallback<SteamApps.PICSChangesCallback>>(callback =>
-                {
-                    if (PreviousChange != callback.Callback.CurrentChangeNumber)
-                    {
-                        PreviousChange = callback.Callback.CurrentChangeNumber;
-
-                        List<uint> appslist = new List<uint>();
-                        List<uint> packageslist = new List<uint>();
-                        string appsmsg = "";
-                        string subsmsg = "";
-                        string Name = "";
-
-                        if (!callback.Callback.RequiresFullUpdate)
-                        {
-                            // Colors are fun
-                            IRCHandler.Send(channel, "Received changelist {0}{1}{2} with {3}{4}{5} apps and {6}{7}{8} packages -{9} http://steamdb.info/changelist.php?changeid={10}",
-                                Colors.OLIVE, PreviousChange, Colors.NORMAL,
-                                callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.AppChanges.Count, Colors.NORMAL,
-                                callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.PackageChanges.Count, Colors.NORMAL,
-                                Colors.DARK_BLUE, PreviousChange
-                            );
-                        }
-
-                        foreach (var callbackapp in callback.Callback.AppChanges)
-                        {
-                            appslist.Add(callbackapp.Key);
-
-                            Name = getAppName(callbackapp.Key.ToString());
-
-                            if (importantapps.Contains(callbackapp.Key.ToString()))
-                            {
-                                IRCHandler.Send("#steamdb", "Important app update: {0}{1}{2} -{3} http://steamdb.info/app/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Key.ToString());
-                            }
-
-                            if (Name.Equals(""))
-                            {
-                                Name = string.Format("{0}{1}{2}", Colors.LIGHT_GRAY, callbackapp.Key.ToString(), Colors.NORMAL);
-                            }
-                            else
-                            {
-                                Name = string.Format("{0}{1}{2} ({3})", Colors.LIGHT_GRAY, callbackapp.Key.ToString(), Colors.NORMAL, Name);
-                            }
-
-                            if (!PreviousChange.Equals(callbackapp.Value.ChangeNumber))
-                            {
-                                IRCHandler.Send(channel, "App: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist.php?changeid={5}", Name, Colors.OLIVE, callbackapp.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Value.ChangeNumber);
-                            }
-                            else
-                            {
-                                appsmsg += " " + Name;
-                            }
-                        }
-
-                        foreach (var callbackpack in callback.Callback.PackageChanges)
-                        {
-                            packageslist.Add(callbackpack.Key);
-
-                            Name = getPackageName(callbackpack.Key.ToString());
-
-                            if (callbackpack.Key.Equals(0))
-                            {
-                                IRCHandler.Send("#steamdb", "Important package update: {0}{1}{2} -{3} http://steamdb.info/sub/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Key.ToString());
-                            }
-
-                            if (Name.Equals(""))
-                            {
-                                Name = string.Format("{0}{1}{2}", Colors.LIGHT_GRAY, callbackpack.Key.ToString(), Colors.NORMAL);
-                            }
-                            else
-                            {
-                                Name = string.Format("{0}{1}{2} ({3})", Colors.LIGHT_GRAY, callbackpack.Key.ToString(), Colors.NORMAL, Name);
-                            }
-
-                            if (!PreviousChange.Equals(callbackpack.Value.ChangeNumber))
-                            {
-                                IRCHandler.Send(channel, "Package: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist.php?changeid={5}", Name, Colors.OLIVE, callbackpack.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Value.ChangeNumber);
-                            }
-                            else
-                            {
-                                subsmsg += " " + Name;
-                            }
-                        }
-
-                        if (!appsmsg.Equals(""))
-                        {
-                            IRCHandler.Send(channel, "Apps:{0}", appsmsg); // No space here because appsmsg already has it
-                        }
-
-                        if (!subsmsg.Equals(""))
-                        {
-                            IRCHandler.Send(channel, "Packages:{0}", subsmsg); // No space here because subsmsg already has it
-                        }
-                    }
-
-                    steamApps.PICSGetChangesSince(PreviousChange, true, true);
-                });
-
-                msg.Handle<SteamClient.JobCallback<SteamApps.PICSProductInfoCallback>>(callback =>
-                {
-                    string Name = "";
-                    string ID = "";
-
-                    foreach (var unknownapp in callback.Callback.UnknownApps)
-                    {
-                        IRCHandler.Send(channel, "Unknown app: {0}{1}{2}", Colors.LIGHT_GRAY, unknownapp.ToString(), Colors.NORMAL);
-                    }
-
-                    foreach (var unknownsub in callback.Callback.UnknownPackages)
-                    {
-                        IRCHandler.Send(channel, "Unknown package: {0}{1}{2}", Colors.LIGHT_GRAY, unknownsub.ToString(), Colors.NORMAL);
-                    }
-
-                    foreach (var callbackapp in callback.Callback.Apps)
-                    {
-                        ID = callbackapp.Key.ToString();
-
-                        if (callbackapp.Value.KeyValues["common"]["name"].Value == null)
-                        {
-                            Name = "AppID " + ID;
-                        }
-                        else
-                        {
-                            Name = callbackapp.Value.KeyValues["common"]["name"].Value.ToString();
-                        }
-
-                        callbackapp.Value.KeyValues.SaveToFile("app/" + ID + ".vdf", false);
-
-                        IRCHandler.Send(channel, "Dump for {0}{1}{2} -{3} http://raw.steamdb.info/app/{4}.vdf", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, ID);
-                    }
-
-                    foreach (var callbacksub in callback.Callback.Packages)
-                    {
-                        ID = callbacksub.Key.ToString();
-
-                        var kv = callback.Callback.Packages[uint.Parse(ID)].KeyValues.Children.FirstOrDefault();
-
-                        if (kv["name"].Value == null)
-                        {
-                            Name = "SubID " + ID;
-                        }
-                        else
-                        {
-                            Name = kv["name"].Value.ToString();
-                        }
-
-                        kv.SaveToFile("sub/" + ID + ".vdf", false);
-
-                        IRCHandler.Send(channel, "Dump for {0}{1}{2} -{3} http://raw.steamdb.info/sub/{4}.vdf", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, ID);
-                    }
-                });
-
-                msg.Handle<SteamClient.JobCallback<SteamUserStats.NumberOfPlayersCallback>>(callback =>
-                {
-                    if (callback.Callback.Result != EResult.OK)
-                    {
-                        IRCHandler.Send(channel, "Unable to request player count: {0}", callback.Callback.Result);
-                    }
-                    else
-                    {
-                        IRCHandler.Send(channel, "Players: {0}", callback.Callback.NumPlayers.ToString());
-                    }
                 });
             }
         }
@@ -391,6 +234,169 @@ namespace IRCbot
 
                     updaterState = callback.State;
                 }
+            }
+        }
+
+        static void OnPICSChanges(SteamApps.PICSChangesCallback callback)
+        {
+            if (PreviousChange != callback.Callback.CurrentChangeNumber)
+            {
+                PreviousChange = callback.Callback.CurrentChangeNumber;
+
+                List<uint> appslist = new List<uint>();
+                List<uint> packageslist = new List<uint>();
+                string appsmsg = "";
+                string subsmsg = "";
+                string Name = "";
+
+                if (!callback.Callback.RequiresFullUpdate)
+                {
+                    // Colors are fun
+                    IRCHandler.Send(channel, "Received changelist {0}{1}{2} with {3}{4}{5} apps and {6}{7}{8} packages -{9} http://steamdb.info/changelist.php?changeid={10}",
+                        Colors.OLIVE, PreviousChange, Colors.NORMAL,
+                        callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.AppChanges.Count, Colors.NORMAL,
+                        callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.PackageChanges.Count, Colors.NORMAL,
+                        Colors.DARK_BLUE, PreviousChange
+                    );
+                }
+
+                foreach (var callbackapp in callback.Callback.AppChanges)
+                {
+                    appslist.Add(callbackapp.Key);
+
+                    Name = getAppName(callbackapp.Key.ToString());
+
+                    if (importantapps.Contains(callbackapp.Key.ToString()))
+                    {
+                        IRCHandler.Send("#steamdb", "Important app update: {0}{1}{2} -{3} http://steamdb.info/app/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Key.ToString());
+                    }
+
+                    if (Name.Equals(""))
+                    {
+                        Name = string.Format("{0}{1}{2}", Colors.LIGHT_GRAY, callbackapp.Key.ToString(), Colors.NORMAL);
+                    }
+                    else
+                    {
+                        Name = string.Format("{0}{1}{2} ({3})", Colors.LIGHT_GRAY, callbackapp.Key.ToString(), Colors.NORMAL, Name);
+                    }
+
+                    if (!PreviousChange.Equals(callbackapp.Value.ChangeNumber))
+                    {
+                        IRCHandler.Send(channel, "App: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist.php?changeid={5}", Name, Colors.OLIVE, callbackapp.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Value.ChangeNumber);
+                    }
+                    else
+                    {
+                        appsmsg += " " + Name;
+                    }
+                }
+
+                foreach (var callbackpack in callback.Callback.PackageChanges)
+                {
+                    packageslist.Add(callbackpack.Key);
+
+                    Name = getPackageName(callbackpack.Key.ToString());
+
+                    if (callbackpack.Key.Equals(0))
+                    {
+                        IRCHandler.Send("#steamdb", "Important package update: {0}{1}{2} -{3} http://steamdb.info/sub/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Key.ToString());
+                    }
+
+                    if (Name.Equals(""))
+                    {
+                        Name = string.Format("{0}{1}{2}", Colors.LIGHT_GRAY, callbackpack.Key.ToString(), Colors.NORMAL);
+                    }
+                    else
+                    {
+                        Name = string.Format("{0}{1}{2} ({3})", Colors.LIGHT_GRAY, callbackpack.Key.ToString(), Colors.NORMAL, Name);
+                    }
+
+                    if (!PreviousChange.Equals(callbackpack.Value.ChangeNumber))
+                    {
+                        IRCHandler.Send(channel, "Package: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist.php?changeid={5}", Name, Colors.OLIVE, callbackpack.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Value.ChangeNumber);
+                    }
+                    else
+                    {
+                        subsmsg += " " + Name;
+                    }
+                }
+
+                if (!appsmsg.Equals(""))
+                {
+                    IRCHandler.Send(channel, "Apps:{0}", appsmsg); // No space here because appsmsg already has it
+                }
+
+                if (!subsmsg.Equals(""))
+                {
+                    IRCHandler.Send(channel, "Packages:{0}", subsmsg); // No space here because subsmsg already has it
+                }
+            }
+
+            steamApps.PICSGetChangesSince(PreviousChange, true, true);
+        }
+
+        static void OnPICSProductInfo(SteamApps.PICSProductInfoCallback callback)
+        {
+            string Name = "";
+            string ID = "";
+
+            foreach (var unknownapp in callback.Callback.UnknownApps)
+            {
+                IRCHandler.Send(channel, "Unknown app: {0}{1}{2}", Colors.LIGHT_GRAY, unknownapp.ToString(), Colors.NORMAL);
+            }
+
+            foreach (var unknownsub in callback.Callback.UnknownPackages)
+            {
+                IRCHandler.Send(channel, "Unknown package: {0}{1}{2}", Colors.LIGHT_GRAY, unknownsub.ToString(), Colors.NORMAL);
+            }
+
+            foreach (var callbackapp in callback.Callback.Apps)
+            {
+                ID = callbackapp.Key.ToString();
+
+                if (callbackapp.Value.KeyValues["common"]["name"].Value == null)
+                {
+                    Name = "AppID " + ID;
+                }
+                else
+                {
+                    Name = callbackapp.Value.KeyValues["common"]["name"].Value.ToString();
+                }
+
+                callbackapp.Value.KeyValues.SaveToFile("app/" + ID + ".vdf", false);
+
+                IRCHandler.Send(channel, "Dump for {0}{1}{2} -{3} http://raw.steamdb.info/app/{4}.vdf", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, ID);
+            }
+
+            foreach (var callbacksub in callback.Callback.Packages)
+            {
+                ID = callbacksub.Key.ToString();
+
+                var kv = callback.Callback.Packages[uint.Parse(ID)].KeyValues.Children.FirstOrDefault();
+
+                if (kv["name"].Value == null)
+                {
+                    Name = "SubID " + ID;
+                }
+                else
+                {
+                    Name = kv["name"].Value.ToString();
+                }
+
+                kv.SaveToFile("sub/" + ID + ".vdf", false);
+
+                IRCHandler.Send(channel, "Dump for {0}{1}{2} -{3} http://raw.steamdb.info/sub/{4}.vdf", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, ID);
+            }
+        }
+
+        static void OnNumberOfPlayers(SteamUserStats.NumberOfPlayersCallback callback)
+        {
+            if (callback.Callback.Result != EResult.OK)
+            {
+                IRCHandler.Send(channel, "Unable to request player count: {0}", callback.Callback.Result);
+            }
+            else
+            {
+                IRCHandler.Send(channel, "Players: {0}", callback.Callback.NumPlayers.ToString());
             }
         }
     }

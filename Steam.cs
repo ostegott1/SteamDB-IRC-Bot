@@ -122,7 +122,6 @@ namespace IRCbot
 
             manager = new CallbackManager(steamClient);
 
-
             new Callback<SteamClient.ConnectedCallback>(OnConnected, manager);
             new Callback<SteamClient.DisconnectedCallback>(OnDisconnected, manager);
 
@@ -137,6 +136,7 @@ namespace IRCbot
             new JobCallback<SteamUserStats.NumberOfPlayersCallback>(OnNumberOfPlayers, manager);
 
             Console.WriteLine("Connecting to Steam...");
+
             steamClient.Connect();
 
             bool isRunning = true;
@@ -150,16 +150,29 @@ namespace IRCbot
         static void OnClanState(SteamFriends.ClanStateCallback callback)
         {
             Console.WriteLine("Got some new stuff!");
+
+            string ClanName = callback.ClanName;
+            
+            if (ClanName.Equals(""))
+            {
+                ClanName = "Group";
+            }
+            else
+            {
+                ClanName = string.Format("{0}{1}{2}", Colors.OLIVE, callback.ClanName, Colors.NORMAL);
+            }
+
             foreach (var announcement in callback.Announcements)
             {
                 Console.WriteLine(announcement.Headline);
-                IRCHandler.Send("#steamdb", "{0}{1}{2} announcement: {3}{4}{5} -{6} http://steamcommunity.com/gid/{7}/announcements/detail/{8}", Colors.OLIVE, callback.ClanName, Colors.NORMAL, Colors.GREEN, announcement.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, announcement.ID);
+                IRCHandler.Send("#steamdb", "{0} announcement: {1}{2}{3} -{4} http://steamcommunity.com/gid/{5}/announcements/detail/{6}", ClanName, Colors.GREEN, announcement.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, announcement.ID);
             }
 
             foreach(var groupevent in callback.Events)
             {
+                // TODO: Check if groupevent.JustPosted is true, if this gets spammy
                 Console.WriteLine(groupevent.Headline);
-                IRCHandler.Send("#steamdb", "{0}{1}{2} event: {3}{4}{5} -{6} http://steamcommunity.com/gid/{7}/events/{8}", Colors.OLIVE, callback.ClanName, Colors.NORMAL, Colors.GREEN, groupevent.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, groupevent.ID);
+                IRCHandler.Send("#steamdb", "{0} event: {1}{2}{3} -{4} http://steamcommunity.com/gid/{5}/events/{6}", ClanName, Colors.GREEN, groupevent.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, groupevent.ID);
             }
         }
 

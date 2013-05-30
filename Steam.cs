@@ -268,7 +268,7 @@ namespace IRCbot
                 if (!callback.RequiresFullUpdate)
                 {
                     // Colors are fun
-                    IRCHandler.Send(channel, "Received changelist {0}{1}{2} with {3}{4}{5} apps and {6}{7}{8} packages -{9} http://steamdb.info/changelist.php?changeid={10}",
+                    IRCHandler.Send(channel, "Received changelist {0}{1}{2} with {3}{4}{5} apps and {6}{7}{8} packages -{9} http://steamdb.info/changelist/{10}/",
                         Colors.OLIVE, PreviousChange, Colors.NORMAL,
                         callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.AppChanges.Count, Colors.NORMAL,
                         callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.PackageChanges.Count, Colors.NORMAL,
@@ -298,7 +298,7 @@ namespace IRCbot
 
                     if (!PreviousChange.Equals(callbackapp.Value.ChangeNumber))
                     {
-                        IRCHandler.Send(channel, "App: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist.php?changeid={5}", Name, Colors.OLIVE, callbackapp.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Value.ChangeNumber);
+                        IRCHandler.Send(channel, "App: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist/{5}/", Name, Colors.OLIVE, callbackapp.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Value.ChangeNumber);
                     }
                     else
                     {
@@ -328,7 +328,7 @@ namespace IRCbot
 
                     if (!PreviousChange.Equals(callbackpack.Value.ChangeNumber))
                     {
-                        IRCHandler.Send(channel, "Package: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist.php?changeid={5}", Name, Colors.OLIVE, callbackpack.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Value.ChangeNumber);
+                        IRCHandler.Send(channel, "Package: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist/{5}/", Name, Colors.OLIVE, callbackpack.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Value.ChangeNumber);
                     }
                     else
                     {

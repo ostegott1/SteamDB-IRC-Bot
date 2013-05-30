@@ -153,13 +153,13 @@ namespace IRCbot
             foreach (var announcement in callback.Announcements)
             {
                 Console.WriteLine(announcement.Headline);
-                IRCHandler.Send("#steamdb", "Group announcement: {0}{1}{2} -{3} http://steamcommunity.com/gid/{4}/announcements/detail/{5}", Colors.GREEN, announcement.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, announcement.ID);
+                IRCHandler.Send("#steamdb", "{0}{1}{2} announcement: {3}{4}{5} -{6} http://steamcommunity.com/gid/{7}/announcements/detail/{8}", Colors.OLIVE, callback.ClanName, Colors.NORMAL, Colors.GREEN, announcement.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, announcement.ID);
             }
 
             foreach(var groupevent in callback.Events)
             {
                 Console.WriteLine(groupevent.Headline);
-                IRCHandler.Send("#steamdb", "New group event: {0}{1}{2} -{3} http://steamcommunity.com/gid/{4}/events/{5}", Colors.GREEN, groupevent.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, groupevent.ID);
+                IRCHandler.Send("#steamdb", "{0}{1}{2} event: {3}{4}{5} -{6} http://steamcommunity.com/gid/{7}/events/{8}", Colors.OLIVE, callback.ClanName, Colors.NORMAL, Colors.GREEN, groupevent.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, groupevent.ID);
             }
         }
 

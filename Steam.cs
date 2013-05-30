@@ -18,7 +18,6 @@ namespace IRCbot
         static SteamFriends steamFriends = steamClient.GetHandler<SteamFriends>();
         static SteamUserStats stats = steamClient.GetHandler<SteamUserStats>();
         static List<string> importantapps = new List<string>();
-        static CustomCallbacks customHandler;
         static CallbackManager manager;
         static uint PreviousChange = 0;
         static string channel;
@@ -123,6 +122,7 @@ namespace IRCbot
 
             manager = new CallbackManager(steamClient);
 
+
             new Callback<SteamClient.ConnectedCallback>(OnConnected, manager);
             new Callback<SteamClient.DisconnectedCallback>(OnDisconnected, manager);
 
@@ -130,34 +130,36 @@ namespace IRCbot
             new Callback<SteamUser.LoggedOffCallback>(OnLoggedOff, manager);
 
             new Callback<SteamFriends.PersonaStateCallback>(OnPersonaState, manager);
+            new Callback<SteamFriends.ClanStateCallback>(OnClanState, manager);
 
             new JobCallback<SteamApps.PICSChangesCallback>(OnPICSChanges, manager);
             new JobCallback<SteamApps.PICSProductInfoCallback>(OnPICSProductInfo, manager);
             new JobCallback<SteamUserStats.NumberOfPlayersCallback>(OnNumberOfPlayers, manager);
 
-            steamClient.AddHandler(new CustomCallbacks());
-            customHandler = steamClient.GetHandler<CustomCallbacks>();
-
+            Console.WriteLine("Connecting to Steam...");
             steamClient.Connect();
 
             bool isRunning = true;
 
             while (isRunning)
             {
-                CallbackMsg msg = steamClient.WaitForCallback(true);
+                manager.RunWaitCallbacks(TimeSpan.FromSeconds(1));
+            }
+        }
 
-                // TODO: Use SteamKit's ClanState callback
-                msg.Handle<CustomCallbacks.announcementCallback>(callback =>
-                {
-                    foreach (var announcement in callback.Result.Body.announcements)
-                    {
-                        Console.WriteLine(announcement.gid.ToString() + announcement.headline.ToString());
+        static void OnClanState(SteamFriends.ClanStateCallback callback)
+        {
+            Console.WriteLine("Got some new stuff!");
+            foreach (var announcement in callback.Announcements)
+            {
+                Console.WriteLine(announcement.Headline);
+                IRCHandler.Send("#steamdb", "Group announcement: {0}{1}{2} -{3} http://steamcommunity.com/gid/{4}/announcements/detail/{5}", Colors.GREEN, announcement.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, announcement.ID);
+            }
 
-                        IRCHandler.Send("#steamdb", "Group announcement: {0}{1}{2} -{3} http://steamcommunity.com/gid/{4}/announcements/detail/{5}", Colors.GREEN, announcement.headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.Result.Body.steamid_clan, announcement.gid);
-                    }
-
-                    // TODO: Add support for group events
-                });
+            foreach(var groupevent in callback.Events)
+            {
+                Console.WriteLine(groupevent.Headline);
+                IRCHandler.Send("#steamdb", "New group event: {0}{1}{2} -{3} http://steamcommunity.com/gid/{4}/events/{5}", Colors.GREEN, groupevent.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, groupevent.ID);
             }
         }
 
@@ -172,6 +174,7 @@ namespace IRCbot
                 throw new Exception("Could not connect: " + callback.Result);
             }
 
+            Console.WriteLine("Connected! Logging in...");
             steamUser.LogOn(new SteamUser.LogOnDetails
             {
                 Username = ConfigurationManager.AppSettings["steam-username"],
@@ -190,6 +193,7 @@ namespace IRCbot
 
         static void OnLoggedOn(SteamUser.LoggedOnCallback callback)
         {
+            Console.WriteLine("Logged on.");
             if (callback.Result != EResult.OK)
             {
                 IRCHandler.SendEmote(channel, "failed to log in: " + callback.Result);
@@ -237,30 +241,29 @@ namespace IRCbot
             }
         }
 
-        static void OnPICSChanges(SteamApps.PICSChangesCallback callback)
+        static void OnPICSChanges(SteamApps.PICSChangesCallback callback, JobID job)
         {
-            if (PreviousChange != callback.Callback.CurrentChangeNumber)
+            if (PreviousChange != callback.CurrentChangeNumber)
             {
-                PreviousChange = callback.Callback.CurrentChangeNumber;
+                PreviousChange = callback.CurrentChangeNumber;
 
                 List<uint> appslist = new List<uint>();
                 List<uint> packageslist = new List<uint>();
                 string appsmsg = "";
                 string subsmsg = "";
                 string Name = "";
-
-                if (!callback.Callback.RequiresFullUpdate)
+                if (!callback.RequiresFullUpdate)
                 {
                     // Colors are fun
                     IRCHandler.Send(channel, "Received changelist {0}{1}{2} with {3}{4}{5} apps and {6}{7}{8} packages -{9} http://steamdb.info/changelist.php?changeid={10}",
                         Colors.OLIVE, PreviousChange, Colors.NORMAL,
-                        callback.Callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.AppChanges.Count, Colors.NORMAL,
-                        callback.Callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.Callback.PackageChanges.Count, Colors.NORMAL,
+                        callback.AppChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.AppChanges.Count, Colors.NORMAL,
+                        callback.PackageChanges.Count >= 10 ? Colors.YELLOW : Colors.OLIVE, callback.PackageChanges.Count, Colors.NORMAL,
                         Colors.DARK_BLUE, PreviousChange
                     );
                 }
 
-                foreach (var callbackapp in callback.Callback.AppChanges)
+                foreach (var callbackapp in callback.AppChanges)
                 {
                     appslist.Add(callbackapp.Key);
 
@@ -290,7 +293,7 @@ namespace IRCbot
                     }
                 }
 
-                foreach (var callbackpack in callback.Callback.PackageChanges)
+                foreach (var callbackpack in callback.PackageChanges)
                 {
                     packageslist.Add(callbackpack.Key);
 
@@ -334,22 +337,22 @@ namespace IRCbot
             steamApps.PICSGetChangesSince(PreviousChange, true, true);
         }
 
-        static void OnPICSProductInfo(SteamApps.PICSProductInfoCallback callback)
+        static void OnPICSProductInfo(SteamApps.PICSProductInfoCallback callback, JobID job)
         {
             string Name = "";
             string ID = "";
 
-            foreach (var unknownapp in callback.Callback.UnknownApps)
+            foreach (var unknownapp in callback.UnknownApps)
             {
                 IRCHandler.Send(channel, "Unknown app: {0}{1}{2}", Colors.LIGHT_GRAY, unknownapp.ToString(), Colors.NORMAL);
             }
 
-            foreach (var unknownsub in callback.Callback.UnknownPackages)
+            foreach (var unknownsub in callback.UnknownPackages)
             {
                 IRCHandler.Send(channel, "Unknown package: {0}{1}{2}", Colors.LIGHT_GRAY, unknownsub.ToString(), Colors.NORMAL);
             }
 
-            foreach (var callbackapp in callback.Callback.Apps)
+            foreach (var callbackapp in callback.Apps)
             {
                 ID = callbackapp.Key.ToString();
 
@@ -367,11 +370,11 @@ namespace IRCbot
                 IRCHandler.Send(channel, "Dump for {0}{1}{2} -{3} http://raw.steamdb.info/app/{4}.vdf", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, ID);
             }
 
-            foreach (var callbacksub in callback.Callback.Packages)
+            foreach (var callbacksub in callback.Packages)
             {
                 ID = callbacksub.Key.ToString();
 
-                var kv = callback.Callback.Packages[uint.Parse(ID)].KeyValues.Children.FirstOrDefault();
+                var kv = callback.Packages[uint.Parse(ID)].KeyValues.Children.FirstOrDefault();
 
                 if (kv["name"].Value == null)
                 {
@@ -388,15 +391,15 @@ namespace IRCbot
             }
         }
 
-        static void OnNumberOfPlayers(SteamUserStats.NumberOfPlayersCallback callback)
+        static void OnNumberOfPlayers(SteamUserStats.NumberOfPlayersCallback callback, JobID job)
         {
-            if (callback.Callback.Result != EResult.OK)
+            if (callback.Result != EResult.OK)
             {
-                IRCHandler.Send(channel, "Unable to request player count: {0}", callback.Callback.Result);
+                IRCHandler.Send(channel, "Unable to request player count: {0}", callback.Result);
             }
             else
             {
-                IRCHandler.Send(channel, "Players: {0}", callback.Callback.NumPlayers.ToString());
+                IRCHandler.Send(channel, "Players: {0}", callback.NumPlayers.ToString());
             }
         }
     }

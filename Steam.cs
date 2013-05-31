@@ -152,14 +152,19 @@ namespace IRCbot
             Console.WriteLine("Got some new stuff!");
 
             string ClanName = callback.ClanName;
-            
-            if (ClanName.Equals(""))
+
+            if (ClanName == null)
+            {
+                ClanName = steamFriends.GetClanName(callback.ClanID);
+            }
+
+            if (ClanName == "[unknown]")
             {
                 ClanName = "Group";
             }
             else
             {
-                ClanName = string.Format("{0}{1}{2}", Colors.OLIVE, callback.ClanName, Colors.NORMAL);
+                ClanName = string.Format("{0}{1}{2}", Colors.OLIVE, ClanName, Colors.NORMAL);
             }
 
             foreach (var announcement in callback.Announcements)
@@ -170,9 +175,10 @@ namespace IRCbot
 
             foreach(var groupevent in callback.Events)
             {
-                // TODO: Check if groupevent.JustPosted is true, if this gets spammy
-                Console.WriteLine(groupevent.Headline);
-                IRCHandler.Send("#steamdb", "{0} event: {1}{2}{3} -{4} http://steamcommunity.com/gid/{5}/events/{6}", ClanName, Colors.GREEN, groupevent.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, groupevent.ID);
+                if (groupevent.JustPosted == true)
+                {
+                    IRCHandler.Send("#steamdb", "{0} event: {1}{2}{3} -{4} http://steamcommunity.com/gid/{5}/events/{6}", ClanName, Colors.GREEN, groupevent.Headline.ToString(), Colors.NORMAL, Colors.DARK_BLUE, callback.ClanID, groupevent.ID);
+                }
             }
         }
 

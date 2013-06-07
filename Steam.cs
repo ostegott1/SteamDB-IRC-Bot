@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using SteamKit2;
 using System.Threading;
 using System.IO;
 using System.Configuration;
 using MySql.Data.MySqlClient;
+using SteamKit2;
+using SteamKit2.GC;
+using SteamKit2.GC.Internal;
 
 namespace IRCbot
 {
@@ -16,12 +18,14 @@ namespace IRCbot
         static SteamUser steamUser = steamClient.GetHandler<SteamUser>();
         static SteamApps steamApps = steamClient.GetHandler<SteamApps>();
         static SteamFriends steamFriends = steamClient.GetHandler<SteamFriends>();
+        static SteamGames steamGames = steamClient.GetHandler<SteamGames>();
         static SteamUserStats stats = steamClient.GetHandler<SteamUserStats>();
         static List<string> importantapps = new List<string>();
         static CallbackManager manager;
         static uint PreviousChange = 0;
         static string channel;
         static EPersonaState updaterState = EPersonaState.Max;
+        static uint LastSchemaVersion = 0;
 
         private static string GetDBString(string SqlFieldName, MySqlDataReader Reader)
         {
@@ -131,6 +135,8 @@ namespace IRCbot
             new Callback<SteamFriends.PersonaStateCallback>(OnPersonaState, manager);
             new Callback<SteamFriends.ClanStateCallback>(OnClanState, manager);
 
+            new Callback<SteamGameCoordinator.MessageCallback>(OnGameCoordinatorMessage, manager);
+
             new JobCallback<SteamApps.PICSChangesCallback>(OnPICSChanges, manager);
             new JobCallback<SteamApps.PICSProductInfoCallback>(OnPICSProductInfo, manager);
             new JobCallback<SteamUserStats.NumberOfPlayersCallback>(OnNumberOfPlayers, manager);
@@ -138,6 +144,8 @@ namespace IRCbot
             Console.WriteLine("Connecting to Steam...");
 
             steamClient.Connect();
+
+            steamGames.PlayGame( 440 );
 
             bool isRunning = true;
 
@@ -419,6 +427,23 @@ namespace IRCbot
             else
             {
                 IRCHandler.Send(channel, "Players: {0}", callback.NumPlayers.ToString());
+            }
+        }
+
+        static void OnGameCoordinatorMessage(SteamGameCoordinator.MessageCallback callback)
+        {
+            Console.WriteLine("GC message: " + callback.EMsg.ToString());
+
+            // What the hell am I doing here
+            //if( callback.EMsg == ClientGCMsgProtobuf.CMsgUpdateItemSchema )
+            if( callback.EMSG == ( uint )EGCItemMsg.k_EMsgGCUpdateItemSchema )
+            {
+                if( LastSchemaVersion != callback.Body.item_schema_version )
+                {
+                    LastSchemaVersion = callback.Body.item_schema_version;
+
+                    IRCHandler.Send(channel, "New TF2 item schema -{0} {1}", Colors.DARK_BLUE, callback.Body.items_game_url );
+                }
             }
         }
     }

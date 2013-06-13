@@ -147,6 +147,7 @@ namespace IRCbot
             new Callback<SteamClient.ConnectedCallback>(OnConnected, manager);
             new Callback<SteamClient.DisconnectedCallback>(OnDisconnected, manager);
 
+            new Callback<SteamUser.AccountInfoCallback>(OnAccountInfo, manager);
             new Callback<SteamUser.LoggedOnCallback>(OnLoggedOn, manager);
             new Callback<SteamUser.LoggedOffCallback>(OnLoggedOff, manager);
 
@@ -216,6 +217,7 @@ namespace IRCbot
             }
 
             Console.WriteLine("Connected! Logging in...");
+
             steamUser.LogOn(new SteamUser.LogOnDetails
             {
                 Username = ConfigurationManager.AppSettings["steam-username"],
@@ -235,6 +237,7 @@ namespace IRCbot
         static void OnLoggedOn(SteamUser.LoggedOnCallback callback)
         {
             Console.WriteLine("Logged on.");
+
             if (callback.Result != EResult.OK)
             {
                 IRCHandler.SendEmote(channel, "failed to log in: " + callback.Result);
@@ -243,17 +246,21 @@ namespace IRCbot
             }
             else
             {
-                steamFriends.SetPersonaName("Jan-willem");
-                steamFriends.SetPersonaState(EPersonaState.Busy);
-                GetPICSChanges();
-
                 IRCHandler.SendEmote(channel, "is now logged in.");
+
+                GetPICSChanges();
             }
         }
 
         static void OnLoggedOff(SteamUser.LoggedOffCallback callback)
         {
             IRCHandler.SendEmote(channel, "logged off of Steam.");
+        }
+
+        static void OnAccountInfo(SteamUser.AccountInfoCallback callback)
+        {
+            //steamFriends.SetPersonaName("Jan-willem");
+            steamFriends.SetPersonaState(EPersonaState.Busy);
         }
 
         static void OnPersonaState(SteamFriends.PersonaStateCallback callback)

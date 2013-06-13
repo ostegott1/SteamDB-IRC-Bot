@@ -114,6 +114,11 @@ namespace IRCbot
             Reader.Dispose();
         }
 
+        public static void GetPICSChanges()
+        {
+            steamApps.PICSGetChangesSince(PreviousChange, true, true);
+        }
+
         public static void Loop()
         {
             channel = ConfigurationManager.AppSettings["announce_channel"];
@@ -223,7 +228,7 @@ namespace IRCbot
             {
                 steamFriends.SetPersonaName("Jan-willem");
                 steamFriends.SetPersonaState(EPersonaState.Busy);
-                steamApps.PICSGetChangesSince(PreviousChange, true, true);
+                GetPICSChanges();
 
                 IRCHandler.SendEmote(channel, "is now logged in.");
             }
@@ -262,15 +267,12 @@ namespace IRCbot
 
         static void OnPICSChanges(SteamApps.PICSChangesCallback callback, JobID job)
         {
+            GetPICSChanges(); // TODO: If this causes troubles, move it to the end of the function
+
             if (PreviousChange != callback.CurrentChangeNumber)
             {
                 PreviousChange = callback.CurrentChangeNumber;
 
-                List<uint> appslist = new List<uint>();
-                List<uint> packageslist = new List<uint>();
-                string appsmsg = "";
-                string subsmsg = "";
-                string Name = "";
                 if (!callback.RequiresFullUpdate)
                 {
                     // Colors are fun
@@ -282,78 +284,87 @@ namespace IRCbot
                     );
                 }
 
-                foreach (var callbackapp in callback.AppChanges)
+                ProcessAppChanges(callback);
+                ProcessSubChanges(callback);
+            }
+        }
+
+        private static void ProcessAppChanges(SteamApps.PICSChangesCallback callback)
+        {
+            string Message = "";
+            string Name = "";
+
+            foreach (var callbackapp in callback.AppChanges)
+            {
+                Name = getAppName(callbackapp.Key.ToString());
+
+                if (importantapps.Contains(callbackapp.Key.ToString()))
                 {
-                    appslist.Add(callbackapp.Key);
-
-                    Name = getAppName(callbackapp.Key.ToString());
-
-                    if (importantapps.Contains(callbackapp.Key.ToString()))
-                    {
-                        IRCHandler.Send("#steamdb", "Important app update: {0}{1}{2} -{3} http://steamdb.info/app/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Key.ToString());
-                    }
-
-                    if (Name.Equals(""))
-                    {
-                        Name = string.Format("{0}{1}{2}", Colors.LIGHT_GRAY, callbackapp.Key.ToString(), Colors.NORMAL);
-                    }
-                    else
-                    {
-                        Name = string.Format("{0}{1}{2} ({3})", Colors.LIGHT_GRAY, callbackapp.Key.ToString(), Colors.NORMAL, Name);
-                    }
-
-                    if (!PreviousChange.Equals(callbackapp.Value.ChangeNumber))
-                    {
-                        IRCHandler.Send(channel, "App: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist/{5}/", Name, Colors.OLIVE, callbackapp.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Value.ChangeNumber);
-                    }
-                    else
-                    {
-                        appsmsg += " " + Name;
-                    }
+                    IRCHandler.Send("#steamdb", "Important app update: {0}{1}{2} -{3} http://steamdb.info/app/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Key.ToString());
                 }
 
-                foreach (var callbackpack in callback.PackageChanges)
+                if (Name.Equals(""))
                 {
-                    packageslist.Add(callbackpack.Key);
-
-                    Name = getPackageName(callbackpack.Key.ToString());
-
-                    if (callbackpack.Key.Equals(0))
-                    {
-                        IRCHandler.Send("#steamdb", "Important package update: {0}{1}{2} -{3} http://steamdb.info/sub/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Key.ToString());
-                    }
-
-                    if (Name.Equals(""))
-                    {
-                        Name = string.Format("{0}{1}{2}", Colors.LIGHT_GRAY, callbackpack.Key.ToString(), Colors.NORMAL);
-                    }
-                    else
-                    {
-                        Name = string.Format("{0}{1}{2} ({3})", Colors.LIGHT_GRAY, callbackpack.Key.ToString(), Colors.NORMAL, Name);
-                    }
-
-                    if (!PreviousChange.Equals(callbackpack.Value.ChangeNumber))
-                    {
-                        IRCHandler.Send(channel, "Package: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist/{5}/", Name, Colors.OLIVE, callbackpack.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Value.ChangeNumber);
-                    }
-                    else
-                    {
-                        subsmsg += " " + Name;
-                    }
+                    Name = string.Format("{0}{1}{2}", Colors.LIGHT_GRAY, callbackapp.Key.ToString(), Colors.NORMAL);
+                }
+                else
+                {
+                    Name = string.Format("{0}{1}{2} ({3})", Colors.LIGHT_GRAY, callbackapp.Key.ToString(), Colors.NORMAL, Name);
                 }
 
-                if (!appsmsg.Equals(""))
+                if (!PreviousChange.Equals(callbackapp.Value.ChangeNumber))
                 {
-                    IRCHandler.Send(channel, "Apps:{0}", appsmsg); // No space here because appsmsg already has it
+                    IRCHandler.Send(channel, "App: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist/{5}/", Name, Colors.OLIVE, callbackapp.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackapp.Value.ChangeNumber);
                 }
-
-                if (!subsmsg.Equals(""))
+                else
                 {
-                    IRCHandler.Send(channel, "Packages:{0}", subsmsg); // No space here because subsmsg already has it
+                    Message += " " + Name;
                 }
             }
 
-            steamApps.PICSGetChangesSince(PreviousChange, true, true);
+            if (!Message.Equals(""))
+            {
+                IRCHandler.Send(channel, "Apps:{0}", Message); // No space here because Message already has it
+            }
+        }
+
+        private static void ProcessSubChanges(SteamApps.PICSChangesCallback callback)
+        {
+            string Message = "";
+            string Name = "";
+
+            foreach (var callbackpack in callback.PackageChanges)
+            {
+                Name = getPackageName(callbackpack.Key.ToString());
+
+                if (callbackpack.Key.Equals(0))
+                {
+                    IRCHandler.Send("#steamdb", "Important package update: {0}{1}{2} -{3} http://steamdb.info/sub/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Key.ToString());
+                }
+
+                if (Name.Equals(""))
+                {
+                    Name = string.Format("{0}{1}{2}", Colors.LIGHT_GRAY, callbackpack.Key.ToString(), Colors.NORMAL);
+                }
+                else
+                {
+                    Name = string.Format("{0}{1}{2} ({3})", Colors.LIGHT_GRAY, callbackpack.Key.ToString(), Colors.NORMAL, Name);
+                }
+
+                if (!PreviousChange.Equals(callbackpack.Value.ChangeNumber))
+                {
+                    IRCHandler.Send(channel, "Package: {0} - bundled changelist {1}{2}{3} -{4} http://steamdb.info/changelist/{5}/", Name, Colors.OLIVE, callbackpack.Value.ChangeNumber, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Value.ChangeNumber);
+                }
+                else
+                {
+                    Message += " " + Name;
+                }
+            }
+
+            if (!Message.Equals(""))
+            {
+                IRCHandler.Send(channel, "Packages:{0}", Message); // No space here because Message already has it
+            }
         }
 
         static void OnPICSProductInfo(SteamApps.PICSProductInfoCallback callback, JobID job)

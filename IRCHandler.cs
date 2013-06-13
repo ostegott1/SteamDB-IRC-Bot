@@ -53,6 +53,11 @@ namespace IRCbot
 
         public static void OnChannelMessage(object sender, IrcEventArgs e)
         {
+            if (e.Data.Type != ReceiveType.ChannelAction)
+            {
+                return;
+            }
+
             switch (e.Data.MessageArray[0])
             {
                 case "!app":

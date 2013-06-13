@@ -18,6 +18,7 @@ namespace IRCbot
         static SteamFriends steamFriends = steamClient.GetHandler<SteamFriends>();
         static SteamUserStats stats = steamClient.GetHandler<SteamUserStats>();
         static List<string> importantapps = new List<string>();
+        static List<string> importantsubs = new List<string>();
         static CallbackManager manager;
         static uint PreviousChange = 0;
         static string channel;
@@ -114,6 +115,21 @@ namespace IRCbot
             Reader.Dispose();
         }
 
+        public static void LoadImportantPackages()
+        {
+            importantsubs.Clear();
+
+            MySqlDataReader Reader = DbWorker.ExecuteReader(@"SELECT SubID FROM ImportantSubs");
+
+            while (Reader.Read())
+            {
+                importantsubs.Add(GetDBString("SubID", Reader));
+            }
+
+            Reader.Close();
+            Reader.Dispose();
+        }
+
         public static void GetPICSChanges()
         {
             steamApps.PICSGetChangesSince(PreviousChange, true, true);
@@ -124,6 +140,7 @@ namespace IRCbot
             channel = ConfigurationManager.AppSettings["announce_channel"];
 
             LoadImportantApps();
+            LoadImportantPackages();
 
             manager = new CallbackManager(steamClient);
 
@@ -337,7 +354,7 @@ namespace IRCbot
             {
                 Name = getPackageName(callbackpack.Key.ToString());
 
-                if (callbackpack.Key.Equals(0))
+                if (importantsubs.Contains(callbackapp.Key.ToString()))
                 {
                     IRCHandler.Send("#steamdb", "Important package update: {0}{1}{2} -{3} http://steamdb.info/sub/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Key.ToString());
                 }

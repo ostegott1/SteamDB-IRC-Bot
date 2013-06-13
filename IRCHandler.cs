@@ -109,6 +109,7 @@ namespace IRCbot
                         if (user.IsOp && e.Data.Nick == user.Nick)
                         {
                             Steam.LoadImportantApps();
+                            Steam.LoadImportantPackages();
                             SendEmote("#steamdb-announce", "reloaded important apps");
 
                             break;

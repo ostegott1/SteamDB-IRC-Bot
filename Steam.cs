@@ -368,7 +368,7 @@ namespace IRCbot
             {
                 Name = getPackageName(callbackpack.Key.ToString());
 
-                if (importantsubs.Contains(callbackapp.Key.ToString()))
+                if (importantsubs.Contains(callbackpack.Key.ToString()))
                 {
                     IRCHandler.Send("#steamdb", "Important package update: {0}{1}{2} -{3} http://steamdb.info/sub/{4}/#section_history", Colors.OLIVE, Name, Colors.NORMAL, Colors.DARK_BLUE, callbackpack.Key.ToString());
                 }

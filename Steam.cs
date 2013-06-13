@@ -336,6 +336,13 @@ namespace IRCbot
                 else
                 {
                     Message += " " + Name;
+
+                    if (Message.Length > 450)
+                    {
+                        IRCHandler.Send(channel, "Apps:{0}", Message);
+
+                        Message = "";
+                    }
                 }
             }
 
@@ -375,6 +382,13 @@ namespace IRCbot
                 else
                 {
                     Message += " " + Name;
+
+                    if (Message.Length > 450)
+                    {
+                        IRCHandler.Send(channel, "Packages:{0}", Message);
+
+                        Message = "";
+                    }
                 }
             }
 

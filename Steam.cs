@@ -158,7 +158,7 @@ namespace IRCbot
                 ClanName = steamFriends.GetClanName(callback.ClanID);
             }
 
-            if (ClanName == "[unknown]")
+            if (ClanName == "") // [unknown]
             {
                 ClanName = "Group";
             }
